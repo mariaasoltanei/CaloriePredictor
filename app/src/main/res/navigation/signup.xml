@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/signup"
+    app:startDestination="@id/personalInfoFragment">
+
+    <fragment
+        android:id="@+id/healthInfoFragment"
+        android:name="ro.android.thesis.HealthInfoFragment"
+        android:label="HealthInfoFragment" />
+    <fragment
+        android:id="@+id/personalInfoFragment"
+        android:name="ro.android.thesis.PersonalInfoFragment"
+        android:label="PersonalInfoFragment" >
+        <action
+            android:id="@+id/action_personalInfoFragment_to_healthInfoFragment"
+            app:destination="@id/healthInfoFragment" />
+    </fragment>
+</navigation>
