@@ -5,19 +5,29 @@
     android:layout_height="match_parent">
 
     <TextView
-        android:id="@+id/tvAccelerometer"
+        android:id="@+id/tvUserName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="DASHBOARD"
+        android:text="Name"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:textSize="35dp"
+        android:fontFamily="@font/righteous_regular"
+        android:textColor="@color/black"/>
 
     <TextView
         android:id="@+id/tvSteps"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="DASHBOARD"
+        android:text="step count"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvAccelerometer" />
+        app:layout_constraintTop_toBottomOf="@id/tvUserName" />
+    <TextView
+        android:id="@+id/tvAccelerometer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="accelerometer data"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvSteps" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

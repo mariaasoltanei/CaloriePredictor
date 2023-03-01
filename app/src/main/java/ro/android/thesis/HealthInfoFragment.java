@@ -1,5 +1,6 @@
 package ro.android.thesis;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -17,7 +18,6 @@ import com.google.gson.Gson;
 
 public class HealthInfoFragment extends Fragment{
     Button btnSignUp;
-    HealthData healthData;
     EditText etSignUpHeight;
     EditText etSignUpWeight;
     EditText etSignUpGender;
@@ -44,6 +44,7 @@ public class HealthInfoFragment extends Fragment{
                 HealthInformation healthInformation = new HealthInformation(Integer.parseInt(etSignUpHeight.getText().toString()), Double.parseDouble(etSignUpWeight.getText().toString()), etSignUpGender.getText().toString());
                 User user = createUser(name, email, password, birthDate, healthInformation);
                 Log.d("USER", String.valueOf(user));
+                addUserToSharedPreferences(user);
                 Intent i = new Intent(getActivity(),MainActivity.class);
                 startActivity(i);
             }
@@ -58,12 +59,14 @@ public class HealthInfoFragment extends Fragment{
         return new User(firstName, email, password, birthDate, healthInformation);
     }
 
-/*        void addUserToSharedPreferences(User user){
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            Gson gson = new Gson();
-            String userData = gson.toJson(user);
-            editor.putString("User", userData);
+    void addUserToSharedPreferences(User user) {
+        SharedPreferences sharedPref = this.getContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        Gson gson = new Gson();
+        String jsonUser = gson.toJson(user);
+        editor.putString("user", jsonUser);
         //editor.clear();
-            editor.commit();
-    }*/
+        editor.apply();
+    }
+
 }
