@@ -24,7 +24,7 @@ public class User {
                 ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
                 ", birthDate='" + birthDate + '\'' +
-                ", healthInformation=" + healthInformation +
+                ", healthInformation=" + healthInformation.toString() +
                 '}';
     }
 
@@ -42,5 +42,17 @@ public class User {
 
     public String getBirthDate() {
         return birthDate;
+    }
+
+    public void setBirthDate(String birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    public void setHealthInformation(HealthInformation healthInformation) {
+        this.healthInformation = healthInformation;
+    }
+
+    public HealthInformation getHealthInformation() {
+        return healthInformation;
     }
 }

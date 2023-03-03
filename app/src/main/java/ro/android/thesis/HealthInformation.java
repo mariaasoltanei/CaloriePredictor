@@ -3,10 +3,15 @@ package ro.android.thesis;
 public class HealthInformation {
     private int height;
     private double weight;
-    private String gender; //TODO:Implement picker
+    private String gender;
 
     public HealthInformation() {
 
+    }
+
+    public HealthInformation(int height, double weight) {
+        this.height = height;
+        this.weight = weight;
     }
 
     public HealthInformation(int height, double weight, String gender) {
@@ -25,5 +30,14 @@ public class HealthInformation {
 
     public void setGender(String gender) {
         this.gender = gender;
+    }
+
+    @Override
+    public String toString() {
+        return "HealthInformation{" +
+                "height=" + height +
+                ", weight=" + weight +
+                ", gender='" + gender + '\'' +
+                '}';
     }
 }

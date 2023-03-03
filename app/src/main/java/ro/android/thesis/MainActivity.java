@@ -40,6 +40,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private Context context;
+    TextView navMenuName;
 
 
     @Override
@@ -47,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         context = this;
+
 
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
         findViewById(R.id.imgIconMenu).setOnClickListener(new View.OnClickListener() {
@@ -56,11 +58,27 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         NavigationView navigationView = findViewById(R.id.navigationView);
+        navMenuName = (TextView) navigationView.getHeaderView(0).findViewById(R.id.navMenuName);
         navigationView.setItemIconTintList(null);
 
         NavController navController = Navigation.findNavController(this, R.id.navHostFragment);
         NavigationUI.setupWithNavController(navigationView, navController);
+        navHeaderMenu();
 
+    }
+
+    private void navHeaderMenu(){
+        SharedPreferences sharedPref = context.getSharedPreferences("userDetails", Context.MODE_PRIVATE);
+        String userLogged = sharedPref.getString("user", null);
+        Gson gson = new Gson();
+        Type type = new TypeToken<User>() {
+        }.getType();
+        User user = gson.fromJson(userLogged, type);
+
+        Log.d("SHARED PREFS TEST", user.getBirthDate().substring(user.getBirthDate().length() - 4));
+        if(user != null) {
+            navMenuName.setText(user.getFirstName());
+        }
     }
 
 }

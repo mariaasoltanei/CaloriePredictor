@@ -10,4 +10,8 @@
     <string name="labelWeight">Weight (kgs)</string>
     <string name="labelGender">Gender</string>
     <string name="labelBirthDate">Birth Date</string>
+    <string-array name="genders_array">
+        <item>Male</item>
+        <item>Female</item>
+    </string-array>
 </resources>
