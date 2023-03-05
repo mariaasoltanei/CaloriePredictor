@@ -11,6 +11,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,6 +24,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -40,10 +42,15 @@ public class DashboardFragment extends Fragment implements SensorEventListener {
     private int numStepsTaken = 0;
     private int numStepsReported = 0;
     private int numSteptDetector = 0;
+    private int statusProgressSteps = 0;
+
+    private Handler progressBarbHandler = new Handler();
 
     TextView countSteps;
     TextView accelerometerData;
     TextView userName;
+    TextView percentageGoal;
+    CircularProgressIndicator circularProgressIndicator;
     public DashboardFragment(){
 
     }
@@ -54,13 +61,17 @@ public class DashboardFragment extends Fragment implements SensorEventListener {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_dashboard, container, false);
+
         if(!stepSensorsAvailable()){
             showToast("Sensors not available for this device!");
             //return;
         }
-        countSteps = rootView.findViewById(R.id.tvSteps);
+        countSteps = rootView.findViewById(R.id.tvDailySteps);
         accelerometerData = rootView.findViewById(R.id.tvAccelerometer);
         userName = rootView.findViewById(R.id.tvUserName);
+        circularProgressIndicator = rootView.findViewById(R.id.progressBarSteps);
+        percentageGoal = rootView.findViewById(R.id.tvPercentageGoal);
+        circularProgressIndicator.setMax(100);
 
         sensorManager = (SensorManager) this.getContext().getSystemService(SENSOR_SERVICE);
         sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -69,6 +80,7 @@ public class DashboardFragment extends Fragment implements SensorEventListener {
 
         registerSensorListeners();
         loadSharePrefsData();
+        startProgressBarThread();
         return rootView;
     }
     public boolean stepSensorsAvailable(){
@@ -105,7 +117,7 @@ public class DashboardFragment extends Fragment implements SensorEventListener {
         }
         if(sensorEvent.sensor.getType() == Sensor.TYPE_STEP_DETECTOR){
             numSteptDetector++;
-            countSteps.setText(String.valueOf(numSteptDetector));
+            countSteps.setText(String.valueOf(numSteptDetector) + "/10.000 steps");
         }
         if(sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
             String x = String.format("%.02f", sensorEvent.values[0]);
@@ -133,4 +145,30 @@ public class DashboardFragment extends Fragment implements SensorEventListener {
             userName.setText("Hi, "+user.getFirstName() +"!");
         }
     }
+    public int convertStepsToProgress(){
+        int noSteps = Integer.parseInt(String.valueOf(countSteps.getText().charAt(0)));
+        if(noSteps == 0) {
+            return 1 * 0;
+        }
+        return (int) (noSteps*0.10);
+
+    }
+    public void startProgressBarThread(){
+        progressBarbHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                int i  = convertStepsToProgress();
+                int percentage;
+                if (i <= 100) {
+                    circularProgressIndicator.setProgress(i);
+                    percentageGoal.setText("You have walked " + String.valueOf(i) +"% of today's goal.");
+                    i++;
+                    progressBarbHandler.postDelayed(this, 200);
+                } else {
+                    progressBarbHandler.removeCallbacks(this);
+                }
+            }
+        }, 200);
+    }
+
 }
