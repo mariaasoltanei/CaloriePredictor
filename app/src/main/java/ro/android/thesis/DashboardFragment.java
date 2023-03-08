@@ -64,7 +64,6 @@ public class DashboardFragment extends Fragment implements SensorEventListener {
 
         if(!stepSensorsAvailable()){
             showToast("Sensors not available for this device!");
-            //return;
         }
         countSteps = rootView.findViewById(R.id.tvDailySteps);
         accelerometerData = rootView.findViewById(R.id.tvAccelerometer);
@@ -145,23 +144,23 @@ public class DashboardFragment extends Fragment implements SensorEventListener {
             userName.setText("Hi, "+user.getFirstName() +"!");
         }
     }
-    public int convertStepsToProgress(){
-        int noSteps = Integer.parseInt(String.valueOf(countSteps.getText().charAt(0)));
+    public double convertStepsToProgress(){
+        double noSteps = Double.parseDouble(String.valueOf(countSteps.getText().charAt(0)));
         if(noSteps == 0) {
             return 1 * 0;
         }
-        return (int) (noSteps*0.10);
+        return (double) (noSteps*0.10);
 
     }
     public void startProgressBarThread(){
         progressBarbHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                int i  = convertStepsToProgress();
+                double i  = convertStepsToProgress();
                 int percentage;
-                if (i <= 100) {
-                    circularProgressIndicator.setProgress(i);
-                    percentageGoal.setText("You have walked " + String.valueOf(i) +"% of today's goal.");
+                if (i <= 100) { //maybe its i<=10000
+                    circularProgressIndicator.setProgress((int) i);
+                    percentageGoal.setText("You have walked " + (int) i +"% of today's goal.");
                     i++;
                     progressBarbHandler.postDelayed(this, 200);
                 } else {

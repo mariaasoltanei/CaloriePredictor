@@ -11,6 +11,8 @@
     <color name="brown">#614124</color>
     <color name="brown_40transparency">#40614124</color>
     <color name="paleRed_80transparency">#80CC704B</color>
+    <color name="paleGreen_60transparency">#609FC088</color>
+    <color name="grey">#7E7E7E</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 </resources>

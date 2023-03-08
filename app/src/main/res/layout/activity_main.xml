@@ -12,7 +12,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?actionBarSize"
-            android:background="@color/paleGreen"
+            android:background="@color/white"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="15dp"
@@ -20,16 +20,10 @@
             app:layout_constraintTop_toTopOf="parent">
             <ImageView
                 android:id="@+id/imgIconMenu"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:src="@drawable/icon_menu"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_menu"
                 />
-            <ImageView
-                android:id="@+id/imgAppNameLogo"
-                android:layout_width="100dp"
-                android:layout_height="30dp"
-                android:src="@drawable/ic_app_name_logo"
-                android:paddingStart="16dp"/>
         </LinearLayout>
         <fragment
             android:id="@+id/navHostFragment"
