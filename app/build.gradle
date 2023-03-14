@@ -6,9 +6,10 @@ plugins {
         force 'androidx.core:core:1.8.0'
     }
 }*/
+apply plugin: "realm-android"
 android {
     compileSdk 32
-
+    buildToolsVersion "30.0.3"
     defaultConfig {
         applicationId "ro.android.thesis"
         minSdk 21
@@ -30,7 +31,9 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 }
-
+realm {
+    syncEnabled = true
+}
 dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.3.1'

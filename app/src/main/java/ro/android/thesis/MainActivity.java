@@ -37,6 +37,8 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.realm.Realm;
+
 
 public class MainActivity extends AppCompatActivity {
     private Context context;
@@ -49,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         context = this;
 
-
+        Realm.init(context);
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
         findViewById(R.id.imgIconMenu).setOnClickListener(new View.OnClickListener() {
             @Override
