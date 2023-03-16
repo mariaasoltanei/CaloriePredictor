@@ -13,6 +13,9 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.realm.Realm;
@@ -29,16 +32,28 @@ import io.realm.mongodb.mongo.MongoDatabase;
 import io.realm.mongodb.sync.SyncConfiguration;
 
 public class ProfileFragment extends Fragment {
-
+    Thread thread;
     public ProfileFragment() {
     }
-    MongoClient mongoClient;
-    MongoDatabase mongoDatabase;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_profile, container, false);
-        new RealmThread().start();
+        //new RealmThread(CalAidApp.getInstance().getApp().currentUser()).start();
+        try {
+            Log.v("EXAMPLE", "Sync state: " + CalAidApp.getInstance().getApp().getSync().getSession(CalAidApp.getInstance().getSyncConfiguration()).getConnectionState());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        thread = new Thread(new RealmThread(CalAidApp.getInstance().getApp().currentUser()));
+        thread.start();
+
         return rootView;
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        thread.interrupt();
+    }
 }
