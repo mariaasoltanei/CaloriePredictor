@@ -1,4 +1,4 @@
-package ro.android.thesis;
+package ro.android.thesis.fragments;
 
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +17,10 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 
+import ro.android.thesis.CalAidApp;
+import ro.android.thesis.LogInActivity;
+import ro.android.thesis.R;
+
 public class SettingsFragment extends Fragment {
     Button btnLogOut;
     public SettingsFragment() {
@@ -27,13 +31,10 @@ public class SettingsFragment extends Fragment {
 
         View rootView = inflater.inflate(R.layout.fragment_settings, container, false);
         btnLogOut = rootView.findViewById(R.id.btnLogOut);
-        btnLogOut.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                logOutUser();
-                Intent i = new Intent(getActivity(),LogInActivity.class);
-                startActivity(i);
-            }
+        btnLogOut.setOnClickListener(view -> {
+            logOutUser();
+            Intent i = new Intent(getActivity(), LogInActivity.class);
+            startActivity(i);
         });
 
         return rootView;
@@ -43,5 +44,6 @@ public class SettingsFragment extends Fragment {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.clear();
         editor.apply();
+        CalAidApp.getApp().currentUser().logOut();
     }
 }

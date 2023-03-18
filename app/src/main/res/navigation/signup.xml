@@ -6,11 +6,11 @@
 
     <fragment
         android:id="@+id/healthInfoFragment"
-        android:name="ro.android.thesis.HealthInfoFragment"
+        android:name="ro.android.thesis.fragments.HealthInfoFragment"
         android:label="HealthInfoFragment" />
     <fragment
         android:id="@+id/personalInfoFragment"
-        android:name="ro.android.thesis.PersonalInfoFragment"
+        android:name="ro.android.thesis.fragments.PersonalInfoFragment"
         android:label="PersonalInfoFragment" >
         <action
             android:id="@+id/action_personalInfoFragment_to_healthInfoFragment"

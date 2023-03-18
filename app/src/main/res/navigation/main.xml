@@ -7,15 +7,15 @@
 
     <fragment
         android:id="@+id/dashboardFragment"
-        android:name="ro.android.thesis.DashboardFragment"
+        android:name="ro.android.thesis.fragments.DashboardFragment"
         android:label="fragment_dashboard"
         tools:layout="@layout/fragment_dashboard" />
     <fragment
         android:id="@+id/profileFragment"
-        android:name="ro.android.thesis.ProfileFragment"
+        android:name="ro.android.thesis.fragments.ProfileFragment"
         android:label="ProfileFragment" />
     <fragment
         android:id="@+id/settingsFragment"
-        android:name="ro.android.thesis.SettingsFragment"
+        android:name="ro.android.thesis.fragments.SettingsFragment"
         android:label="SettingsFragment" />
 </navigation>

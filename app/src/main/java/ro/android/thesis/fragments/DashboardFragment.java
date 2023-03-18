@@ -1,4 +1,4 @@
-package ro.android.thesis;
+package ro.android.thesis.fragments;
 
 import static android.content.Context.SENSOR_SERVICE;
 
@@ -13,7 +13,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
@@ -29,6 +28,9 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+
+import ro.android.thesis.R;
+import ro.android.thesis.domain.User;
 
 
 public class DashboardFragment extends Fragment implements SensorEventListener {

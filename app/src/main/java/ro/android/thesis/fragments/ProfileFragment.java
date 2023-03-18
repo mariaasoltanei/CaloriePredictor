@@ -1,4 +1,4 @@
-package ro.android.thesis;
+package ro.android.thesis.fragments;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -30,6 +30,7 @@ import io.realm.mongodb.mongo.MongoClient;
 import io.realm.mongodb.mongo.MongoCollection;
 import io.realm.mongodb.mongo.MongoDatabase;
 import io.realm.mongodb.sync.SyncConfiguration;
+import ro.android.thesis.R;
 
 public class ProfileFragment extends Fragment {
     Thread thread;
@@ -38,15 +39,8 @@ public class ProfileFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_profile, container, false);
-        //new RealmThread(CalAidApp.getInstance().getApp().currentUser()).start();
-        try {
-            Log.v("EXAMPLE", "Sync state: " + CalAidApp.getInstance().getApp().getSync().getSession(CalAidApp.getInstance().getSyncConfiguration()).getConnectionState());
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        thread = new Thread(new RealmThread(CalAidApp.getInstance().getApp().currentUser()));
-        thread.start();
+        //thread = new Thread(new RealmThread(CalAidApp.getInstance().getApp().currentUser()));
+        //thread.start();
 
         return rootView;
     }
@@ -54,6 +48,6 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        thread.interrupt();
+        //thread.interrupt();
     }
 }

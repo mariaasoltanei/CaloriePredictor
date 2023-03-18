@@ -30,7 +30,7 @@ public class SplashScreen extends AppCompatActivity {
             @Override
             public void run() {
                 boolean isSharedPrefs = checkUserSharedPreferences();
-                if (isSharedPrefs) {
+                if(isSharedPrefs) {
                     final Intent mainIntent = new Intent(getApplicationContext(), MainActivity.class);
                     startActivity(mainIntent);
                 } else {

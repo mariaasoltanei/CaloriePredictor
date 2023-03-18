@@ -1,16 +1,14 @@
-package ro.android.thesis;
+package ro.android.thesis.fragments;
 
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.EditText;
 
 import androidx.annotation.Nullable;
@@ -18,11 +16,11 @@ import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.navigation.Navigation;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
+
+import ro.android.thesis.R;
+import ro.android.thesis.fragments.HealthInfoFragment;
 
 public class PersonalInfoFragment extends Fragment {
     Button btnNext;
