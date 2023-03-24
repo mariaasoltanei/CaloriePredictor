@@ -26,20 +26,17 @@ public class SplashScreen extends AppCompatActivity {
         imgSplashScreen = findViewById(R.id.imgSplashScreen);
         animSideSlide = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.side_slide);
         imgSplashScreen.startAnimation(animSideSlide);
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                boolean isSharedPrefs = checkUserSharedPreferences();
-                if(isSharedPrefs) {
-                    final Intent mainIntent = new Intent(getApplicationContext(), MainActivity.class);
-                    startActivity(mainIntent);
-                } else {
-                    final Intent mainIntent = new Intent(getApplicationContext(), LogInActivity.class);
-                    startActivity(mainIntent);
-                }
-                //finish();
+        new Handler().postDelayed(() -> {
+            boolean isSharedPrefs = checkUserSharedPreferences();
+            if(isSharedPrefs) {
+                final Intent mainIntent = new Intent(getApplicationContext(), MainActivity.class);
+                startActivity(mainIntent);
+            } else {
+                final Intent mainIntent = new Intent(getApplicationContext(), LogInActivity.class);
+                startActivity(mainIntent);
             }
-        }, 2000);
+            //finish();
+        }, 2200);
 
     }
 
@@ -53,7 +50,6 @@ public class SplashScreen extends AppCompatActivity {
             }
         }
         return true;
-
     }
 
 }

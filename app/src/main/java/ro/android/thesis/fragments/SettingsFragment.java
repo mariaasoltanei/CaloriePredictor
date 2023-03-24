@@ -17,6 +17,8 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 
+import io.realm.mongodb.App;
+import io.realm.mongodb.User;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.LogInActivity;
 import ro.android.thesis.R;
@@ -44,6 +46,13 @@ public class SettingsFragment extends Fragment {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.clear();
         editor.apply();
-        CalAidApp.getApp().currentUser().logOut();
+        CalAidApp.getApp().currentUser().logOutAsync(result -> {
+            if(CalAidApp.getApp().currentUser() == null){
+                Log.d("Realm", "User Logged out");
+                CalAidApp.setSyncConfigurationMain(null);
+            }
+            //Log.d("Realm",CalAidApp.getApp().currentUser().getId());
+        });
+
     }
 }

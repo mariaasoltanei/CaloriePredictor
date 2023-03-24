@@ -35,6 +35,18 @@ public class User extends RealmObject {
         this.activityMultiplier = activityMultiplier;
     }
 
+    public User(ObjectId _id, String firstName, String email, String password, String birthDate, double height, double weight, String gender, double activityMultiplier) {
+        this._id = _id;
+        this.firstName = firstName;
+        this.email = email;
+        this.password = password;
+        this.birthDate = birthDate;
+        this.height = height;
+        this.weight = weight;
+        this.gender = gender;
+        this.activityMultiplier = activityMultiplier;
+    }
+
     @Override
     public String toString() {
         return "User{" +

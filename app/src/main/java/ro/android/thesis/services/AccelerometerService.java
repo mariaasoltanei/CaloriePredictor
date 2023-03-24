@@ -19,6 +19,8 @@ import androidx.annotation.RequiresApi;
 
 import org.bson.types.ObjectId;
 
+import java.util.Date;
+
 import io.realm.Realm;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
@@ -30,20 +32,28 @@ public class AccelerometerService extends Service implements SensorEventListener
     io.realm.mongodb.User mongoDBUser;
     private SensorManager sensorManager;
     private Sensor sensorAccelerometer;
+    private Sensor sensorStepCounter;
+    private int stepCount = 0;
     private Realm realm;
 
+    @Override
+    public void onCreate() {
+
+    }
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         new Thread(() -> { //TODO: ADD WHILE TRUE TO CONTINUOUSLY COLLECT SENSOR DATA
-                realm = Realm.getInstance(HealthInfoFragment.getSyncConfiguration());
+                //realm = Realm.getInstance(HealthInfoFragment.getSyncConfiguration());
                 sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
                 sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+                sensorStepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
                 sensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+            sensorManager.registerListener(this, sensorStepCounter, SensorManager.SENSOR_DELAY_NORMAL);
 
-                Log.d("RealmService", realm.getPath());
-                Log.d("RealmService", "Initialization succeeded APP");
+                //Log.d("RealmService", realm.getPath());
+                //Log.d("RealmService", "Initialization succeeded APP");
                 try {
                     Thread.sleep(2000);
                 } catch (InterruptedException interruptedException) {
@@ -81,14 +91,18 @@ public class AccelerometerService extends Service implements SensorEventListener
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        if (sensorEvent.values[2] < 9.70 && sensorEvent.values[2] > 9.80) {
-            realm.executeTransaction(realm -> {
-                AccelerometerData data = new AccelerometerData();
-                data.setId(new ObjectId());
-                data.setUserId(CalAidApp.getCurrentUser().getId());
-
-            });
-        }
+//        if (sensorEvent.values[2] < 9.70 && sensorEvent.values[2] > 9.80) {
+//            realm.executeTransaction(realm -> {
+//                AccelerometerData data = new AccelerometerData();
+//                data.setId(new ObjectId());
+//                data.setUserId(CalAidApp.getCurrentUser().getId());
+//                data.setX(sensorEvent.values[0]);
+//                data.setY(sensorEvent.values[1]);
+//                data.setZ(sensorEvent.values[2]);
+//                data.setTimestamp(new Date(System.currentTimeMillis()));
+//               // realm.insert(data);
+//            });
+//        }
 
     }
 

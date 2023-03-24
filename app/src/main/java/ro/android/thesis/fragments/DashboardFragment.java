@@ -2,6 +2,7 @@ package ro.android.thesis.fragments;
 
 import static android.content.Context.SENSOR_SERVICE;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -14,6 +15,8 @@ import android.os.Bundle;
 import android.os.Handler;
 
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import android.util.Log;
@@ -29,6 +32,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 
+import ro.android.thesis.MainActivity;
 import ro.android.thesis.R;
 import ro.android.thesis.domain.User;
 

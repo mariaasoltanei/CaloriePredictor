@@ -10,9 +10,13 @@ import io.realm.Realm;
 import io.realm.mongodb.App;
 import io.realm.mongodb.AppConfiguration;
 import io.realm.mongodb.User;
+import io.realm.mongodb.sync.MutableSubscriptionSet;
+import io.realm.mongodb.sync.Subscription;
+import io.realm.mongodb.sync.SyncConfiguration;
 
 public class CalAidApp extends Application {
     private static final String APP_ID = "caloriepredictor-rxpzo";
+    private static SyncConfiguration syncConfigurationMain;
 
     private static User appUser;
 
@@ -31,6 +35,14 @@ public class CalAidApp extends Application {
         appUser = user;
     }
 
+    public static SyncConfiguration getSyncConfigurationMain() {
+        return syncConfigurationMain;
+    }
+
+    public static void setSyncConfigurationMain(SyncConfiguration syncConfigurationMain) {
+        CalAidApp.syncConfigurationMain = syncConfigurationMain;
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onCreate() {
@@ -39,6 +51,16 @@ public class CalAidApp extends Application {
         app = new App(new AppConfiguration.Builder(APP_ID)
                 .defaultSyncErrorHandler((session, error) -> Log.e("Realm", error.toString()))
                 .build());
+        syncConfigurationMain = new SyncConfiguration.Builder(app.currentUser())
+                .waitForInitialRemoteData()
+                .allowWritesOnUiThread(false)
+                .initialSubscriptions((realm, subscriptions) -> {
+                    subscriptions.remove("PasswordSubscription");
+                    subscriptions.add(Subscription.create("PasswordSubscription",
+                            realm.where(ro.android.thesis.domain.User.class)
+                                    .equalTo("password", "123456")));
+                })
+                .build();
     }
 
 }

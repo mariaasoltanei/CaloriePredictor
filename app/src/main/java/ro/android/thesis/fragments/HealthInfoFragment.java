@@ -74,7 +74,8 @@ public class HealthInfoFragment extends Fragment {
 
         btnSignUp = rootView.findViewById(R.id.btnSignUp);
         btnSignUp.setOnClickListener(view -> {
-            User user = new User(name, email, password, birthDate,
+            ObjectId objectId = new ObjectId();
+            User user = new User(objectId, name, email, password, birthDate,
                     parseDouble(etSignUpHeight.getText().toString()),
                     Double.parseDouble(etSignUpWeight.getText().toString()),
                     String.valueOf(spinSignUpGender.getSelectedItem()),
@@ -89,24 +90,21 @@ public class HealthInfoFragment extends Fragment {
                     syncConfiguration = new SyncConfiguration.Builder(CalAidApp.getApp().currentUser())
                             .waitForInitialRemoteData()
                             .allowWritesOnUiThread(true)
-                            .initialSubscriptions(new SyncConfiguration.InitialFlexibleSyncSubscriptions() {
-                                @Override
-                                public void configure(Realm realm, MutableSubscriptionSet subscriptions) {
-                                    subscriptions.remove("PasswordSubscription");
-                                    subscriptions.add(Subscription.create("PasswordSubscription",
-                                            realm.where(ro.android.thesis.domain.User.class)
-                                                    .equalTo("password", password)));
-                                }
+                            .initialSubscriptions((realm, subscriptions) -> {
+                                subscriptions.remove("PasswordSubscription");
+                                subscriptions.add(Subscription.create("PasswordSubscription",
+                                        realm.where(User.class)
+                                                .equalTo("password", password)));
                             })
                             .build();
-                    Realm.getInstanceAsync(syncConfiguration, new Realm.Callback() {
+                    CalAidApp.setSyncConfigurationMain(syncConfiguration);
+                    Realm.getInstanceAsync(CalAidApp.getSyncConfigurationMain(), new Realm.Callback() {
                         @Override
                         public void onSuccess(Realm realm) {
                             Log.v(
                                     "Realm",
                                     "Successfully opened a realm with reads and writes allowed on the UI thread."
                             );
-                            user.setId(new ObjectId());
                             realm.executeTransaction(realm1 -> realm1.insert(user));
                             realm.close();
                         }
