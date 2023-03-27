@@ -26,8 +26,10 @@ import org.bson.types.ObjectId;
 import java.lang.reflect.Type;
 
 import io.realm.Realm;
+import io.realm.RealmResults;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
+import ro.android.thesis.domain.AccelerometerData;
 import ro.android.thesis.domain.User;
 
 public class ProfileFragment extends Fragment {
@@ -53,12 +55,13 @@ public class ProfileFragment extends Fragment {
             public void run() {
                 realm = Realm.getInstance(CalAidApp.getSyncConfigurationMain());
                 final User user  = realm.where(User.class).equalTo("email", getUserEmail()).findFirst();
+//                RealmResults<AccelerometerData> results = realm.where(AccelerometerData.class).findAll();
+//                realm.executeTransaction(realm -> results.deleteAllFromRealm());
                 userCopy = realm.copyFromRealm(user);
                 Log.d("Realm", "ProfileFragment/" + userCopy);
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        //etUpdateEmail.setText(userCopy.getEmail());
                         etUpdateHeight.setText(String.valueOf((int) userCopy.getHeight()));
                         etUpdateWeight.setText(String.valueOf((int) userCopy.getWeight()));
                     }

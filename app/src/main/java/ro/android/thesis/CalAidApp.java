@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import io.realm.Realm;
+import io.realm.RealmResults;
 import io.realm.mongodb.App;
 import io.realm.mongodb.AppConfiguration;
 import io.realm.mongodb.User;
@@ -22,6 +23,7 @@ import io.realm.mongodb.sync.MutableSubscriptionSet;
 import io.realm.mongodb.sync.Subscription;
 import io.realm.mongodb.sync.SyncConfiguration;
 import io.realm.mongodb.sync.SyncSession;
+import ro.android.thesis.domain.AccelerometerData;
 import ro.android.thesis.services.AccelerometerService;
 import ro.android.thesis.services.StepService;
 
@@ -31,6 +33,7 @@ public class CalAidApp extends Application {
 
     private static User appUser;
 
+    Realm realm;
 
     private static App app;
 
@@ -115,16 +118,22 @@ public class CalAidApp extends Application {
                     }
                 })
                 .build());
-//        syncConfigurationMain = new SyncConfiguration.Builder(app.currentUser())
-//                .waitForInitialRemoteData()
-//                .allowWritesOnUiThread(false)
-//                .initialSubscriptions((realm, subscriptions) -> {
-//                    subscriptions.remove("PasswordSubscription");
-//                    subscriptions.add(Subscription.create("PasswordSubscription",
-//                            realm.where(ro.android.thesis.domain.User.class)
-//                                    .equalTo("password", "123456")));
-//                })
-//                .build();
+        syncConfigurationMain = new SyncConfiguration.Builder(app.currentUser())
+                .waitForInitialRemoteData()
+                .allowWritesOnUiThread(false)
+                .initialSubscriptions((realm, subscriptions) -> {
+                    subscriptions.remove("PasswordSubscription");
+                    subscriptions.add(Subscription.create("PasswordSubscription",
+                            realm.where(ro.android.thesis.domain.User.class)
+                                    .equalTo("password", "123456")));
+                    subscriptions.remove("AccelerometerData");
+                    subscriptions.add(Subscription.create("AccelerometerData",
+                            realm.where(ro.android.thesis.domain.AccelerometerData.class)
+                                    .equalTo("userId", CalAidApp.getApp().currentUser().getId())));
+                })
+                .build();
+
+
 
         startForegroundService(new Intent(this, AccelerometerService.class));
         startForegroundService(new Intent(this, StepService.class));

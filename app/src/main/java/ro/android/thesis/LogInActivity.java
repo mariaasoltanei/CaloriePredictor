@@ -48,7 +48,7 @@ public class LogInActivity extends AppCompatActivity {
             Credentials emailPasswordCredentials = Credentials.emailPassword(etLoginEmail.getText().toString(), etLoginPassword.getText().toString());
             CalAidApp.getApp().loginAsync(emailPasswordCredentials, it -> {
                 if (it.isSuccess()) {
-                    String jwt = CalAidApp.getApp().currentUser().getAccessToken();
+                   // String jwt = CalAidApp.getApp().currentUser().getAccessToken();
                     SyncConfiguration syncConfiguration = new SyncConfiguration.Builder(CalAidApp.getApp().currentUser())
                             .waitForInitialRemoteData()
                             //.allowWritesOnUiThread(true)

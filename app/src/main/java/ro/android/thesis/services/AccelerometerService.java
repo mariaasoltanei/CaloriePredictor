@@ -23,6 +23,8 @@ import org.bson.types.ObjectId;
 import java.util.Date;
 
 import io.realm.Realm;
+import io.realm.mongodb.sync.Subscription;
+import io.realm.mongodb.sync.SyncConfiguration;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
 import ro.android.thesis.domain.AccelerometerData;
@@ -41,38 +43,21 @@ public class AccelerometerService extends Service implements SensorEventListener
         realm = Realm.getInstance(CalAidApp.getSyncConfigurationMain());
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        handler = new Handler();
-        runnable = new Runnable() {
-            @Override
-            public void run() {
-                //sendDataToMongoDB();
-                handler.postDelayed(this, 10000); // Send data every 10 seconds
-            }
-        };
-        handler.postDelayed(runnable, 10000);
+//        handler = new Handler();
+//        runnable = new Runnable() {
+//            @Override
+//            public void run() {
+//                sendDataToMongoDB();
+//                handler.postDelayed(this, 10000); // Send data every 10 seconds
+//            }
+//        };
+//        handler.postDelayed(runnable, 10000); // Start sending data after 10 seconds
+
     }
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
-        new Thread(() -> { //TODO: ADD WHILE TRUE TO CONTINUOUSLY COLLECT SENSOR DATA
-                //realm = Realm.getInstance(HealthInfoFragment.getSyncConfiguration());
-
-
-                //Log.d("RealmService", realm.getPath());
-                //Log.d("RealmService", "Initialization succeeded APP");
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException interruptedException) {
-                    interruptedException.printStackTrace();
-                }
-               // Log.e("RealmService", "Initialization failed: " + e.getMessage());
-
-
-        }
-        ).start();
-
+        sensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         final String CHANNELID = "Foreground Service ID";
         createNotificationChannel(CHANNELID);
         Notification.Builder notification = new Notification.Builder(this, CHANNELID)
@@ -89,7 +74,7 @@ public class AccelerometerService extends Service implements SensorEventListener
         super.onDestroy();
         realm.close();
         sensorManager.unregisterListener(this);
-        handler.removeCallbacks(runnable);
+        //handler.removeCallbacks(runnable);
     }
 
     @Nullable
@@ -100,18 +85,22 @@ public class AccelerometerService extends Service implements SensorEventListener
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        if (sensorEvent.values[2] < 9.70 && sensorEvent.values[2] > 9.80) {
-            realm.executeTransaction(realm -> {
-                AccelerometerData data = new AccelerometerData();
-                data.setId(new ObjectId());
-                data.setUserId(CalAidApp.getCurrentUser().getId());
-                data.setX(sensorEvent.values[0]);
-                data.setY(sensorEvent.values[1]);
-                data.setZ(sensorEvent.values[2]);
-                data.setTimestamp(new Date(System.currentTimeMillis()));
-               // realm.insert(data);
-            });
-        }
+        //Log.d("AccelerometerService", "AccelerometerService/" + sensorEvent.values[0] +" " + sensorEvent.values[1] +" "+sensorEvent.values[2]);
+//        if(realm !=  null) {
+//            if (Math.abs(sensorEvent.values[0]) < 0.25 && Math.abs(sensorEvent.values[1]) < 0.6 && sensorEvent.values[2] < 9.70 && sensorEvent.values[2] > 9.90) {
+//                realm.executeTransactionAsync(realm -> {
+//                    AccelerometerData data = new AccelerometerData();
+//                    data.setId(new ObjectId());
+//                    data.setUserId(CalAidApp.getApp().currentUser().getId());
+//                    data.setX(sensorEvent.values[0]);
+//                    data.setY(sensorEvent.values[1]);
+//                    data.setZ(sensorEvent.values[2]);
+//                    data.setTimestamp(new Date(System.currentTimeMillis()));
+//                    Log.d("Realm", "AccelerometerService/" + sensorEvent.values[2]);
+//                    realm.insert(data);
+//                });
+//            }
+//        }
 
     }
 
