@@ -23,6 +23,11 @@
             android:enabled="true"
             android:label="Accelerometer Service" >
         </service>
+        <service
+            android:name=".services.StepService"
+            android:enabled="true"
+            android:label="Accelerometer Service" >
+        </service>
 
         <activity android:name=".MainActivity" />
         <activity android:name=".SignUpActivity" />

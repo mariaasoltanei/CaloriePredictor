@@ -48,6 +48,7 @@ public class LogInActivity extends AppCompatActivity {
             Credentials emailPasswordCredentials = Credentials.emailPassword(etLoginEmail.getText().toString(), etLoginPassword.getText().toString());
             CalAidApp.getApp().loginAsync(emailPasswordCredentials, it -> {
                 if (it.isSuccess()) {
+                    String jwt = CalAidApp.getApp().currentUser().getAccessToken();
                     SyncConfiguration syncConfiguration = new SyncConfiguration.Builder(CalAidApp.getApp().currentUser())
                             .waitForInitialRemoteData()
                             //.allowWritesOnUiThread(true)
@@ -72,7 +73,7 @@ public class LogInActivity extends AppCompatActivity {
                                 Log.d("Realm", "LoginActivity/No user found");
                                 //Todo: Add login errors
                             } else {
-                                Log.d("Realm", "LoginActivity/" + user.getId() + user.getClass());
+                                Log.d("Realm", "LoginActivity/" + user.getId() + user.getClass() + user.getFirstName());
                                 userSharedPrefs = new User(user.getId(), user.getFirstName(), user.getEmail(), user.getPassword(), user.getBirthDate(), user.getHeight(), user.getWeight(), user.getGender(), user.getActivityMultiplier());
                                 addUserToSharedPreferences(userSharedPrefs);
                                 realm.close();
@@ -102,4 +103,5 @@ public class LogInActivity extends AppCompatActivity {
         //editor.clear();
         editor.apply();
     }
+
 }

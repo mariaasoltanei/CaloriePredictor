@@ -46,6 +46,9 @@ public class SettingsFragment extends Fragment {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.clear();
         editor.apply();
+        if (sharedPref.getString("user", null) == null) {
+            Log.d("Realm", "Cleared Shared prefs");
+        }
         CalAidApp.getApp().currentUser().logOutAsync(result -> {
             if(CalAidApp.getApp().currentUser() == null){
                 Log.d("Realm", "User Logged out");

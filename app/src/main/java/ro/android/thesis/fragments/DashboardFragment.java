@@ -2,8 +2,11 @@ package ro.android.thesis.fragments;
 
 import static android.content.Context.SENSOR_SERVICE;
 
-import android.Manifest;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
@@ -15,10 +18,9 @@ import android.os.Bundle;
 import android.os.Handler;
 
 import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import android.os.IBinder;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,29 +33,25 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.util.Calendar;
 
-import ro.android.thesis.MainActivity;
 import ro.android.thesis.R;
+import ro.android.thesis.broadcasts.StepCountReceiver;
 import ro.android.thesis.domain.User;
+import ro.android.thesis.services.StepService;
 
 
-public class DashboardFragment extends Fragment implements SensorEventListener {
+public class DashboardFragment extends Fragment {
     private SensorManager sensorManager;
-    private Sensor sensorAccelerometer;
-    private Sensor sensorStepCounter;
-    private Sensor sensorStepDetector;
+    private Handler resetNumStepsHandler;
+    private Runnable resetNumStepsRunnable;
 
     User user;
-
-    private int numStepsTaken = 0;
-    private int numStepsReported = 0;
-    private int numSteptDetector = 0;
-    private int statusProgressSteps = 0;
+    private StepCountReceiver stepCountReceiver;
 
     private Handler progressBarbHandler = new Handler();
 
     TextView countSteps;
-    TextView accelerometerData;
     TextView userName;
     TextView percentageGoal;
     CircularProgressIndicator circularProgressIndicator;
@@ -62,6 +60,7 @@ public class DashboardFragment extends Fragment implements SensorEventListener {
     }
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        startProgressBarThread();
     }
 
     @Override
@@ -72,21 +71,62 @@ public class DashboardFragment extends Fragment implements SensorEventListener {
             showToast("Sensors not available for this device!");
         }
         countSteps = rootView.findViewById(R.id.tvDailySteps);
-        accelerometerData = rootView.findViewById(R.id.tvAccelerometer);
         userName = rootView.findViewById(R.id.tvUserName);
         circularProgressIndicator = rootView.findViewById(R.id.progressBarSteps);
         percentageGoal = rootView.findViewById(R.id.tvPercentageGoal);
         circularProgressIndicator.setMax(100);
 
         sensorManager = (SensorManager) this.getContext().getSystemService(SENSOR_SERVICE);
-        sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorStepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
-        sensorStepDetector = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
+        ServiceConnection serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+                StepService.StepCountBinder binder = (StepService.StepCountBinder) iBinder;
+                StepService service = binder.getService();
+                int stepCount = service.getStepCount();
+                Log.d("STEP COUNTER", "DashboardFragment/" + stepCount);
+                countSteps.setText(String.valueOf(stepCount));
+            }
 
-        registerSensorListeners();
+            @Override
+            public void onServiceDisconnected(ComponentName componentName) {
+
+            }
+        };
+        resetNumStepsHandler = new Handler();
+        resetNumStepsRunnable = () -> {
+            countSteps.setText("");
+            resetNumStepsHandler.postDelayed(resetNumStepsRunnable, getTimeUntilMidnight());
+        };
+
+        resetNumStepsHandler.postDelayed(resetNumStepsRunnable, getTimeUntilMidnight());
+
+        Intent serviceIntent = new Intent(getActivity(), StepService.class);
+        getActivity().bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+        //registerSensorListeners();
         loadSharePrefsData();
-        startProgressBarThread();
+        //startProgressBarThread();
         return rootView;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        stepCountReceiver = new StepCountReceiver(countSteps);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(StepService.STEP_COUNT_ACTION);
+        getActivity().registerReceiver(stepCountReceiver, filter);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        getActivity().unregisterReceiver(stepCountReceiver);
+    }
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        // Stop the handler when the view is destroyed to prevent memory leaks
+        resetNumStepsHandler.removeCallbacks(resetNumStepsRunnable);
     }
     public boolean stepSensorsAvailable(){
         PackageManager packageManager = this.getContext().getPackageManager();
@@ -105,38 +145,6 @@ public class DashboardFragment extends Fragment implements SensorEventListener {
         });
     }
 
-    private void registerSensorListeners(){
-        sensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this, sensorStepCounter, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this, sensorStepDetector, SensorManager.SENSOR_DELAY_NORMAL);
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent sensorEvent) {
-        Sensor sensor = sensorEvent.sensor;
-        if(sensorEvent.sensor.getType() == Sensor.TYPE_STEP_COUNTER){
-            if(numStepsReported < 1){
-                numStepsReported = (int) sensorEvent.values[0];
-                Log.d("STEP COUNTER", String.valueOf(sensorEvent.values[0]));
-            }
-        }
-        if(sensorEvent.sensor.getType() == Sensor.TYPE_STEP_DETECTOR){
-            numSteptDetector++;
-            countSteps.setText(String.valueOf(numSteptDetector) + "/10.000 steps");
-        }
-        if(sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
-            String x = String.format("%.02f", sensorEvent.values[0]);
-            String y = String.format("%.02f", sensorEvent.values[1]);
-            String z = String.format("%.02f", sensorEvent.values[2]);
-            accelerometerData.setText(x + " " + y + " " + z);
-        }
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-
-    }
-
     private void loadSharePrefsData(){
         SharedPreferences sharedPref = this.getContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
         String userLogged = sharedPref.getString("user", null);
@@ -151,11 +159,11 @@ public class DashboardFragment extends Fragment implements SensorEventListener {
         }
     }
     public double convertStepsToProgress(){
-        double noSteps = Double.parseDouble(String.valueOf(countSteps.getText().charAt(0)));
+        double noSteps = Double.parseDouble(String.valueOf(countSteps.getText()));
         if(noSteps == 0) {
             return 1 * 0;
         }
-        return (double) (noSteps*0.10);
+        return (double) (noSteps*0.01);
 
     }
     public void startProgressBarThread(){
@@ -174,6 +182,23 @@ public class DashboardFragment extends Fragment implements SensorEventListener {
                 }
             }
         }, 200);
+    }
+    private long getTimeUntilMidnight() {
+        Calendar midnightCalendar = Calendar.getInstance();
+        midnightCalendar.set(Calendar.HOUR_OF_DAY, 24);
+        midnightCalendar.set(Calendar.MINUTE, 0);
+        midnightCalendar.set(Calendar.SECOND, 0);
+        midnightCalendar.set(Calendar.MILLISECOND, 0);
+
+        long currentTime = System.currentTimeMillis();
+        long midnightTime = midnightCalendar.getTimeInMillis();
+
+        if (midnightTime < currentTime) {
+            midnightCalendar.add(Calendar.DAY_OF_MONTH, 1);
+            midnightTime = midnightCalendar.getTimeInMillis();
+        }
+
+        return midnightTime - currentTime;
     }
 
 }

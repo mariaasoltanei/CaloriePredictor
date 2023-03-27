@@ -24,6 +24,7 @@ import java.lang.reflect.Type;
 
 import ro.android.thesis.domain.User;
 import ro.android.thesis.services.AccelerometerService;
+import ro.android.thesis.services.StepService;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -48,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.navHostFragment);
         NavigationUI.setupWithNavController(navigationView, navController);
         navHeaderMenu();
-        startForegroundService(new Intent(this, AccelerometerService.class));
+
 
     }
 

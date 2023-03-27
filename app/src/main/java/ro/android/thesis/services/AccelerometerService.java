@@ -11,6 +11,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -28,17 +29,28 @@ import ro.android.thesis.domain.AccelerometerData;
 import ro.android.thesis.fragments.HealthInfoFragment;
 
 public class AccelerometerService extends Service implements SensorEventListener {
-    private static final String API_KEY = "nJpGv1efocEzWAmkOSRpkcQWywGCWEyLKNJJRK9XtwzOd5aiSWwcYicb305vypDw";
-    io.realm.mongodb.User mongoDBUser;
     private SensorManager sensorManager;
     private Sensor sensorAccelerometer;
-    private Sensor sensorStepCounter;
-    private int stepCount = 0;
     private Realm realm;
+    private Handler handler;
+    private Runnable runnable;
 
     @Override
     public void onCreate() {
-
+        super.onCreate();
+        realm = Realm.getInstance(CalAidApp.getSyncConfigurationMain());
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        sensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        handler = new Handler();
+        runnable = new Runnable() {
+            @Override
+            public void run() {
+                //sendDataToMongoDB();
+                handler.postDelayed(this, 10000); // Send data every 10 seconds
+            }
+        };
+        handler.postDelayed(runnable, 10000);
     }
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -46,11 +58,7 @@ public class AccelerometerService extends Service implements SensorEventListener
 
         new Thread(() -> { //TODO: ADD WHILE TRUE TO CONTINUOUSLY COLLECT SENSOR DATA
                 //realm = Realm.getInstance(HealthInfoFragment.getSyncConfiguration());
-                sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-                sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-                sensorStepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
-                sensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-            sensorManager.registerListener(this, sensorStepCounter, SensorManager.SENSOR_DELAY_NORMAL);
+
 
                 //Log.d("RealmService", realm.getPath());
                 //Log.d("RealmService", "Initialization succeeded APP");
@@ -81,6 +89,7 @@ public class AccelerometerService extends Service implements SensorEventListener
         super.onDestroy();
         realm.close();
         sensorManager.unregisterListener(this);
+        handler.removeCallbacks(runnable);
     }
 
     @Nullable
@@ -91,18 +100,18 @@ public class AccelerometerService extends Service implements SensorEventListener
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-//        if (sensorEvent.values[2] < 9.70 && sensorEvent.values[2] > 9.80) {
-//            realm.executeTransaction(realm -> {
-//                AccelerometerData data = new AccelerometerData();
-//                data.setId(new ObjectId());
-//                data.setUserId(CalAidApp.getCurrentUser().getId());
-//                data.setX(sensorEvent.values[0]);
-//                data.setY(sensorEvent.values[1]);
-//                data.setZ(sensorEvent.values[2]);
-//                data.setTimestamp(new Date(System.currentTimeMillis()));
-//               // realm.insert(data);
-//            });
-//        }
+        if (sensorEvent.values[2] < 9.70 && sensorEvent.values[2] > 9.80) {
+            realm.executeTransaction(realm -> {
+                AccelerometerData data = new AccelerometerData();
+                data.setId(new ObjectId());
+                data.setUserId(CalAidApp.getCurrentUser().getId());
+                data.setX(sensorEvent.values[0]);
+                data.setY(sensorEvent.values[1]);
+                data.setZ(sensorEvent.values[2]);
+                data.setTimestamp(new Date(System.currentTimeMillis()));
+               // realm.insert(data);
+            });
+        }
 
     }
 
