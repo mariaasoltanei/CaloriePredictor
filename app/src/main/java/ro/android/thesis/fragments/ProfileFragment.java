@@ -29,6 +29,7 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
+import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.AccelerometerData;
 import ro.android.thesis.domain.User;
 
@@ -44,12 +45,16 @@ public class ProfileFragment extends Fragment {
     Handler handler = new Handler(Looper.getMainLooper());
     User userCopy;
 
+    LoadingDialog loadingDialog = new LoadingDialog();
+
     public ProfileFragment() {
     }
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
+        loadingDialog.setCancelable(false);
+        loadingDialog.show(getChildFragmentManager(), "loading_screen");
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -64,6 +69,7 @@ public class ProfileFragment extends Fragment {
                     public void run() {
                         etUpdateHeight.setText(String.valueOf((int) userCopy.getHeight()));
                         etUpdateWeight.setText(String.valueOf((int) userCopy.getWeight()));
+                        loadingDialog.dismiss();
                     }
                 });
                 realm.close();
@@ -90,6 +96,8 @@ public class ProfileFragment extends Fragment {
         btnSaveUpdate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                loadingDialog.setCancelable(false);
+                loadingDialog.show(getChildFragmentManager(), "loading_screen");
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -104,6 +112,7 @@ public class ProfileFragment extends Fragment {
                             }
                         });
                         addUserToSharedPreferences(userCopy);
+                        loadingDialog.dismiss();
                         realm.close();
                     }
                 }).start();

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,9 +23,12 @@ import io.realm.mongodb.User;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.LogInActivity;
 import ro.android.thesis.R;
+import ro.android.thesis.dialogs.LoadingDialog;
 
 public class SettingsFragment extends Fragment {
     Button btnLogOut;
+
+
     public SettingsFragment() {
     }
 

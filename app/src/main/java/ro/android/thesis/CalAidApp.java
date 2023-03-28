@@ -8,6 +8,8 @@ import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -30,7 +32,7 @@ import ro.android.thesis.services.StepService;
 public class CalAidApp extends Application {
     private static final String APP_ID = "caloriepredictor-rxpzo";
     private static SyncConfiguration syncConfigurationMain;
-
+    int currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
     private static User appUser;
 
     Realm realm;
@@ -56,6 +58,7 @@ public class CalAidApp extends Application {
     public static void setSyncConfigurationMain(SyncConfiguration syncConfigurationMain) {
         CalAidApp.syncConfigurationMain = syncConfigurationMain;
     }
+
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -135,7 +138,7 @@ public class CalAidApp extends Application {
 
 
 
-        startForegroundService(new Intent(this, AccelerometerService.class));
+        //startForegroundService(new Intent(this, AccelerometerService.class));
         startForegroundService(new Intent(this, StepService.class));
     }
 

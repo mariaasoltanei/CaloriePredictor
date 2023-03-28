@@ -92,13 +92,13 @@ public class DashboardFragment extends Fragment {
 
             }
         };
-        resetNumStepsHandler = new Handler();
-        resetNumStepsRunnable = () -> {
-            countSteps.setText("");
-            resetNumStepsHandler.postDelayed(resetNumStepsRunnable, getTimeUntilMidnight());
-        };
+//        resetNumStepsHandler = new Handler();
+//        resetNumStepsRunnable = () -> {
+//            countSteps.setText("");
+//            resetNumStepsHandler.postDelayed(resetNumStepsRunnable, getTimeUntilMidnight());
+//        };
 
-        resetNumStepsHandler.postDelayed(resetNumStepsRunnable, getTimeUntilMidnight());
+        //resetNumStepsHandler.postDelayed(resetNumStepsRunnable, getTimeUntilMidnight());
 
         Intent serviceIntent = new Intent(getActivity(), StepService.class);
         getActivity().bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
@@ -125,8 +125,7 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        // Stop the handler when the view is destroyed to prevent memory leaks
-        resetNumStepsHandler.removeCallbacks(resetNumStepsRunnable);
+//        resetNumStepsHandler.removeCallbacks(resetNumStepsRunnable);
     }
     public boolean stepSensorsAvailable(){
         PackageManager packageManager = this.getContext().getPackageManager();

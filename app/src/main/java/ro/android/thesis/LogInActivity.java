@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
@@ -17,12 +18,14 @@ import io.realm.RealmQuery;
 import io.realm.mongodb.Credentials;
 import io.realm.mongodb.sync.Subscription;
 import io.realm.mongodb.sync.SyncConfiguration;
+import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.User;
 
 public class LogInActivity extends AppCompatActivity {
     Button btnLogin;
     Button btnRegister;
 
+    LoadingDialog loadingDialog = new LoadingDialog();
     EditText etLoginEmail;
     EditText etLoginPassword;
     User user;
@@ -45,13 +48,14 @@ public class LogInActivity extends AppCompatActivity {
         btnLogin = findViewById(R.id.btnLogIn);
 
         btnLogin.setOnClickListener(view -> {
+        loadingDialog.setCancelable(false);
+        loadingDialog.show(getSupportFragmentManager(), "loading_screen");
             Credentials emailPasswordCredentials = Credentials.emailPassword(etLoginEmail.getText().toString(), etLoginPassword.getText().toString());
             CalAidApp.getApp().loginAsync(emailPasswordCredentials, it -> {
                 if (it.isSuccess()) {
                    // String jwt = CalAidApp.getApp().currentUser().getAccessToken();
                     SyncConfiguration syncConfiguration = new SyncConfiguration.Builder(CalAidApp.getApp().currentUser())
                             .waitForInitialRemoteData()
-                            //.allowWritesOnUiThread(true)
                             .initialSubscriptions((realm, subscriptions) -> {
                                 subscriptions.remove("PasswordSubscription");
                                 subscriptions.add(Subscription.create("PasswordSubscription",
@@ -77,6 +81,7 @@ public class LogInActivity extends AppCompatActivity {
                                 userSharedPrefs = new User(user.getId(), user.getFirstName(), user.getEmail(), user.getPassword(), user.getBirthDate(), user.getHeight(), user.getWeight(), user.getGender(), user.getActivityMultiplier());
                                 addUserToSharedPreferences(userSharedPrefs);
                                 realm.close();
+                                loadingDialog.dismiss();
                                 final Intent mainIntent = new Intent(getApplicationContext(), MainActivity.class);
                                 startActivity(mainIntent);
                             }

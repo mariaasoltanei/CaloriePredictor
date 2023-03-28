@@ -24,23 +24,28 @@ import org.bson.types.ObjectId;
 
 import io.realm.Realm;
 import io.realm.mongodb.Credentials;
-import io.realm.mongodb.sync.MutableSubscriptionSet;
 import io.realm.mongodb.sync.Subscription;
 import io.realm.mongodb.sync.SyncConfiguration;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.MainActivity;
 import ro.android.thesis.R;
+import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.User;
 
 public class HealthInfoFragment extends Fragment {
+    private static SyncConfiguration syncConfiguration;
     Button btnSignUp;
     EditText etSignUpHeight;
     EditText etSignUpWeight;
     Spinner spinSignUpGender;
     Spinner spinSignUpActivity;
-    private static SyncConfiguration syncConfiguration;
+    LoadingDialog loadingDialog = new LoadingDialog();
 
     public HealthInfoFragment() {
+    }
+
+    public static SyncConfiguration getSyncConfiguration() {
+        return syncConfiguration;
     }
 
     @Override
@@ -74,6 +79,8 @@ public class HealthInfoFragment extends Fragment {
 
         btnSignUp = rootView.findViewById(R.id.btnSignUp);
         btnSignUp.setOnClickListener(view -> {
+            loadingDialog.setCancelable(false);
+            loadingDialog.show(getChildFragmentManager(), "loading_screen");
             ObjectId objectId = new ObjectId();
             User user = new User(objectId, name, email, password, birthDate,
                     parseDouble(etSignUpHeight.getText().toString()),
@@ -111,6 +118,7 @@ public class HealthInfoFragment extends Fragment {
                     });
                     addUserToSharedPreferences(user);
                     CalAidApp.setCurrentUser(CalAidApp.getApp().currentUser());
+                    loadingDialog.dismiss();
                     Intent i = new Intent(getActivity(), MainActivity.class);
                     startActivity(i);
                 } else {
@@ -125,9 +133,6 @@ public class HealthInfoFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         //realm.close();
-    }
-    public static SyncConfiguration getSyncConfiguration(){
-        return syncConfiguration;
     }
     //TODO: FUNCTION TO SET UP SPINNER
 

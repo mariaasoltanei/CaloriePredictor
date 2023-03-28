@@ -37,9 +37,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         context = this;
-        //Realm.init(context);
-
-        //Realm.init(context);
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
         findViewById(R.id.imgIconMenu).setOnClickListener(view -> drawerLayout.openDrawer(Gravity.LEFT));
         NavigationView navigationView = findViewById(R.id.navigationView);
@@ -61,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
         }.getType();
         User user = gson.fromJson(userLogged, type);
 
+        //TODO: Get age with this
         //Log.d("SHARED PREFS TEST", user.getBirthDate().substring(user.getBirthDate().length() - 4));
         if (user != null) {
             navMenuName.setText(user.getFirstName());

@@ -21,6 +21,7 @@ import java.util.Calendar;
 
 import ro.android.thesis.R;
 import ro.android.thesis.fragments.HealthInfoFragment;
+import ro.android.thesis.utils.KeyboardUtils;
 
 public class PersonalInfoFragment extends Fragment {
     Button btnNext;
@@ -149,5 +150,6 @@ public class PersonalInfoFragment extends Fragment {
 
         datePickerDialog = new DatePickerDialog(this.getContext(), style, dateSetListener, year, month, day);
     }
+
 
 }
