@@ -2,6 +2,7 @@ package ro.android.thesis.fragments;
 
 import static android.content.Context.SENSOR_SERVICE;
 
+import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -18,6 +19,8 @@ import android.os.Bundle;
 import android.os.Handler;
 
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import android.os.IBinder;
@@ -61,6 +64,9 @@ public class DashboardFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         startProgressBarThread();
+        if (ContextCompat.checkSelfPermission(this.getContext(), Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this.getActivity(), new String[] {Manifest.permission.ACTIVITY_RECOGNITION}, 1);
+        }
     }
 
     @Override
@@ -106,6 +112,19 @@ public class DashboardFragment extends Fragment {
         loadSharePrefsData();
         //startProgressBarThread();
         return rootView;
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        switch (requestCode) {
+            case 1: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Permission granted, start using the step counter sensor
+                } else {
+                    // Permission denied, handle accordingly
+                }
+            }
+            return;
+        }
     }
 
     @Override
@@ -171,6 +190,10 @@ public class DashboardFragment extends Fragment {
             public void run() {
                 double i  = convertStepsToProgress();
                 int percentage;
+                if(i > 100){
+                    circularProgressIndicator.setProgress(100);
+                    percentageGoal.setText("Contratulations! You reached your step goal");
+                }
                 if (i <= 100) { //maybe its i<=10000
                     circularProgressIndicator.setProgress((int) i);
                     percentageGoal.setText("You have walked " + (int) i +"% of today's goal.");

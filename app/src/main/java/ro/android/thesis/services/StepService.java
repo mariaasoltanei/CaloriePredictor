@@ -17,7 +17,12 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import java.util.Calendar;
+import java.util.Timer;
+import java.util.concurrent.TimeUnit;
+
 import ro.android.thesis.R;
+import ro.android.thesis.utils.ResetStepCountTask;
 
 public class StepService extends Service implements SensorEventListener {
     private static final String TAG = "StepCountService";
@@ -25,6 +30,8 @@ public class StepService extends Service implements SensorEventListener {
     private SensorManager sensorManager;
     private Sensor stepSensor;
     private int stepCount = 0;
+    private int initialStepCount = 0;
+    Timer resetTimer = new Timer();
 
     public static final String STEP_COUNT_ACTION = "ro.android.thesis.services.STEP_COUNT_ACTION";
     public static final String EXTRA_STEP_COUNT = "ro.android.thesis.services.EXTRA_STEP_COUNT";
@@ -50,6 +57,7 @@ public class StepService extends Service implements SensorEventListener {
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         if (stepSensor != null) {
+            initialStepCount = stepCount;
             sensorManager.registerListener(this, stepSensor, SENSOR_DELAY);
         } else {
             Log.e(TAG, "onCreate: Step sensor not available");
@@ -63,6 +71,13 @@ public class StepService extends Service implements SensorEventListener {
                     .setContentTitle("")
                     .setSmallIcon(R.drawable.icon_launcher);
         }
+
+        Calendar midnight = Calendar.getInstance();
+        midnight.set(Calendar.HOUR_OF_DAY, 18);
+        midnight.set(Calendar.MINUTE, 42);
+        midnight.set(Calendar.SECOND, 0);
+        midnight.set(Calendar.MILLISECOND, 0);
+        resetTimer.schedule(new ResetStepCountTask(this), midnight.getTime(), TimeUnit.DAYS.toMillis(1));
 
         startForeground(1002, notification.build());
     }
@@ -96,12 +111,17 @@ public class StepService extends Service implements SensorEventListener {
         super.onDestroy();
         Log.d(TAG, "onDestroy: Service destroyed");
         sensorManager.unregisterListener(this);
+        resetTimer.cancel();
     }
 
     private void updateStepCount(int stepCount) {
         Intent intent = new Intent(STEP_COUNT_ACTION);
         intent.putExtra(EXTRA_STEP_COUNT, stepCount);
         sendBroadcast(intent);
+    }
+    public void resetStepCount() {
+        this.stepCount = 0;
+        updateStepCount(stepCount);
     }
     @Override
     public void onSensorChanged(SensorEvent event) {

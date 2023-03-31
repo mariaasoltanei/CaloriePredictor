@@ -121,20 +121,22 @@ public class CalAidApp extends Application {
                     }
                 })
                 .build());
-        syncConfigurationMain = new SyncConfiguration.Builder(app.currentUser())
-                .waitForInitialRemoteData()
-                .allowWritesOnUiThread(false)
-                .initialSubscriptions((realm, subscriptions) -> {
-                    subscriptions.remove("PasswordSubscription");
-                    subscriptions.add(Subscription.create("PasswordSubscription",
-                            realm.where(ro.android.thesis.domain.User.class)
-                                    .equalTo("password", "123456")));
-                    subscriptions.remove("AccelerometerData");
-                    subscriptions.add(Subscription.create("AccelerometerData",
-                            realm.where(ro.android.thesis.domain.AccelerometerData.class)
-                                    .equalTo("userId", CalAidApp.getApp().currentUser().getId())));
-                })
-                .build();
+
+//        syncConfigurationMain = new SyncConfiguration.Builder(app.currentUser())
+//                .waitForInitialRemoteData()
+//                .allowWritesOnUiThread(false)
+//                .initialSubscriptions((realm, subscriptions) -> {
+//                    subscriptions.remove("PasswordSubscription");
+//                    subscriptions.add(Subscription.create("PasswordSubscription",
+//                            realm.where(ro.android.thesis.domain.User.class)
+//                                    .equalTo("password", "123456")));
+//                    subscriptions.remove("AccelerometerData");
+//                    subscriptions.add(Subscription.create("AccelerometerData",
+//                            realm.where(ro.android.thesis.domain.AccelerometerData.class)
+//                                    .equalTo("userId", CalAidApp.getApp().currentUser().getId())));
+//                })
+//                .build();
+        Log.w("TIME", String.valueOf(Calendar.getInstance().get(Calendar.HOUR_OF_DAY)));
 
 
 

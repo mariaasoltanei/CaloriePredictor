@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import org.bson.types.ObjectId;
 
 import io.realm.Realm;
+import io.realm.mongodb.App;
 import io.realm.mongodb.Credentials;
 import io.realm.mongodb.sync.Subscription;
 import io.realm.mongodb.sync.SyncConfiguration;
@@ -88,41 +89,47 @@ public class HealthInfoFragment extends Fragment {
                     String.valueOf(spinSignUpGender.getSelectedItem()),
                     selectActivityMultiplier(spinSignUpActivity.getSelectedItem().toString()));
             Log.d("USER", String.valueOf(user));
-            Credentials emailPasswordCredentials = Credentials.emailPassword(email, password);
 
-            CalAidApp.getApp().loginAsync(emailPasswordCredentials, it -> {
-                if (it.isSuccess()) {
-                    Log.v("Realm", "Successfully authenticated using an email and password.");
+            CalAidApp.getApp().getEmailPassword().registerUserAsync(email, password, new App.Callback<Void>() {
+                @Override
+                public void onResult(App.Result<Void> result) {
+                    Credentials emailPasswordCredentials = Credentials.emailPassword(email, password);
+                    CalAidApp.getApp().loginAsync(emailPasswordCredentials, it -> {
+                        if (it.isSuccess()) {
+                            Log.v("Realm", "Successfully authenticated using an email and password.");
 
-                    syncConfiguration = new SyncConfiguration.Builder(CalAidApp.getApp().currentUser())
-                            .waitForInitialRemoteData()
-                            .allowWritesOnUiThread(true)
-                            .initialSubscriptions((realm, subscriptions) -> {
-                                subscriptions.remove("PasswordSubscription");
-                                subscriptions.add(Subscription.create("PasswordSubscription",
-                                        realm.where(User.class)
-                                                .equalTo("password", password)));
-                            })
-                            .build();
-                    CalAidApp.setSyncConfigurationMain(syncConfiguration);
-                    Realm.getInstanceAsync(CalAidApp.getSyncConfigurationMain(), new Realm.Callback() {
-                        @Override
-                        public void onSuccess(Realm realm) {
-                            Log.v(
-                                    "Realm",
-                                    "Successfully opened a realm with reads and writes allowed on the UI thread."
-                            );
-                            realm.executeTransaction(realm1 -> realm1.insert(user));
-                            realm.close();
+                            syncConfiguration = new SyncConfiguration.Builder(CalAidApp.getApp().currentUser())
+                                    .waitForInitialRemoteData()
+                                    .allowWritesOnUiThread(true)
+                                    .initialSubscriptions((realm, subscriptions) -> {
+                                        subscriptions.remove("PasswordSubscription");
+                                        subscriptions.add(Subscription.create("PasswordSubscription",
+                                                realm.where(User.class)
+                                                        .equalTo("password", password)));
+                                    })
+                                    .build();
+                            CalAidApp.setSyncConfigurationMain(syncConfiguration);
+                            Realm.getInstanceAsync(CalAidApp.getSyncConfigurationMain(), new Realm.Callback() {
+                                @Override
+                                public void onSuccess(Realm realm) {
+                                    Log.v(
+                                            "Realm",
+                                            "Successfully opened a realm with reads and writes allowed on the UI thread."
+                                    );
+                                    realm.executeTransaction(realm1 -> realm1.insert(user));
+                                    //realm.executeTransaction(realm ->  realm);
+                                    realm.close();
+                                }
+                            });
+                            addUserToSharedPreferences(user);
+                            CalAidApp.setCurrentUser(CalAidApp.getApp().currentUser());
+                            loadingDialog.dismiss();
+                            Intent i = new Intent(getActivity(), MainActivity.class);
+                            startActivity(i);
+                        } else {
+                            Log.e("Realm", it.getError().toString());
                         }
                     });
-                    addUserToSharedPreferences(user);
-                    CalAidApp.setCurrentUser(CalAidApp.getApp().currentUser());
-                    loadingDialog.dismiss();
-                    Intent i = new Intent(getActivity(), MainActivity.class);
-                    startActivity(i);
-                } else {
-                    Log.e("Realm", it.getError().toString());
                 }
             });
         });
