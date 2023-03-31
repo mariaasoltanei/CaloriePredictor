@@ -20,6 +20,7 @@ import io.realm.mongodb.sync.Subscription;
 import io.realm.mongodb.sync.SyncConfiguration;
 import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.User;
+import ro.android.thesis.utils.KeyboardUtils;
 
 public class LogInActivity extends AppCompatActivity {
     Button btnLogin;
@@ -37,8 +38,9 @@ public class LogInActivity extends AppCompatActivity {
         setContentView(R.layout.login_screen);
 
         etLoginEmail = findViewById(R.id.etLoginEmail);
-        etLoginPassword = findViewById(R.id.etLoginPassword);
 
+        etLoginPassword = findViewById(R.id.etLoginPassword);
+        KeyboardUtils.hideKeyboardOnClickOutside(this);
         btnRegister = findViewById(R.id.btnRegister);
         btnRegister.setOnClickListener(view -> {
             Intent i = new Intent(getApplicationContext(), SignUpActivity.class);
@@ -53,7 +55,8 @@ public class LogInActivity extends AppCompatActivity {
             Credentials emailPasswordCredentials = Credentials.emailPassword(etLoginEmail.getText().toString(), etLoginPassword.getText().toString());
             CalAidApp.getApp().loginAsync(emailPasswordCredentials, it -> {
                 if (it.isSuccess()) {
-                   // String jwt = CalAidApp.getApp().currentUser().getAccessToken();
+
+//                   // String jwt = CalAidApp.getApp().currentUser().getAccessToken();
                     SyncConfiguration syncConfiguration = new SyncConfiguration.Builder(CalAidApp.getApp().currentUser())
                             .waitForInitialRemoteData()
                             .initialSubscriptions((realm, subscriptions) -> {
@@ -64,7 +67,7 @@ public class LogInActivity extends AppCompatActivity {
                             })
                             .build();
                     CalAidApp.setSyncConfigurationMain(syncConfiguration);
-                    Realm.getInstanceAsync(syncConfiguration, new Realm.Callback() {
+                    Realm.getInstanceAsync(CalAidApp.getSyncConfigurationMain(), new Realm.Callback() {
                         @Override
                         public void onSuccess(Realm realm) {
                             Log.v(

@@ -32,6 +32,7 @@ import ro.android.thesis.R;
 import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.AccelerometerData;
 import ro.android.thesis.domain.User;
+import ro.android.thesis.utils.KeyboardUtils;
 
 public class ProfileFragment extends Fragment {
     Realm realm;
@@ -89,9 +90,11 @@ public class ProfileFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_profile, container, false);
         //etUpdateEmail = rootView.findViewById(R.id.etUpdateEmail);
         etUpdateHeight = rootView.findViewById(R.id.etUpdateHeight);
+
         etUpdateWeight = rootView.findViewById(R.id.etUpdateWeight);
         btnSaveUpdate = rootView.findViewById(R.id.btnSaveUpdate);
         btnUpdatePassword = rootView.findViewById(R.id.btnUpdatePassword);
+        KeyboardUtils.setupUI(rootView, this.getActivity());
 
         btnSaveUpdate.setOnClickListener(new View.OnClickListener() {
             @Override

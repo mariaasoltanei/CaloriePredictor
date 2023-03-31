@@ -31,6 +31,7 @@ public class StepService extends Service implements SensorEventListener {
     private Sensor stepSensor;
     private int stepCount = 0;
     private int initialStepCount = 0;
+    int stepsSinceServiceStarted;
     Timer resetTimer = new Timer();
 
     public static final String STEP_COUNT_ACTION = "ro.android.thesis.services.STEP_COUNT_ACTION";
@@ -73,8 +74,8 @@ public class StepService extends Service implements SensorEventListener {
         }
 
         Calendar midnight = Calendar.getInstance();
-        midnight.set(Calendar.HOUR_OF_DAY, 18);
-        midnight.set(Calendar.MINUTE, 42);
+        midnight.set(Calendar.HOUR_OF_DAY, 0);
+        midnight.set(Calendar.MINUTE, 0);
         midnight.set(Calendar.SECOND, 0);
         midnight.set(Calendar.MILLISECOND, 0);
         resetTimer.schedule(new ResetStepCountTask(this), midnight.getTime(), TimeUnit.DAYS.toMillis(1));
@@ -120,13 +121,14 @@ public class StepService extends Service implements SensorEventListener {
         sendBroadcast(intent);
     }
     public void resetStepCount() {
-        this.stepCount = 0;
-        updateStepCount(stepCount);
+        this.initialStepCount = this.stepCount;
+        updateStepCount(initialStepCount);
     }
     @Override
     public void onSensorChanged(SensorEvent event) {
         stepCount = (int) event.values[0];
-        updateStepCount(stepCount);
+        //stepsSinceServiceStarted = stepCount - initialStepCount;
+        updateStepCount(stepCount - initialStepCount);
         Log.d(TAG, "onSensorChanged: Step count updated: " + stepCount);
     }
 
@@ -135,7 +137,7 @@ public class StepService extends Service implements SensorEventListener {
     }
 
     public int getStepCount() {
-        return stepCount;
+        return stepCount - initialStepCount;
     }
     private void createNotificationChannel(String CHANNEL_ID) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

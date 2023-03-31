@@ -10,20 +10,21 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
+
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import android.os.IBinder;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,7 +37,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
-import java.util.Calendar;
 
 import ro.android.thesis.R;
 import ro.android.thesis.broadcasts.StepCountReceiver;
@@ -45,14 +45,12 @@ import ro.android.thesis.services.StepService;
 
 
 public class DashboardFragment extends Fragment {
-    private SensorManager sensorManager;
-    private Handler resetNumStepsHandler;
-    private Runnable resetNumStepsRunnable;
-
     User user;
     private StepCountReceiver stepCountReceiver;
 
     private Handler progressBarbHandler = new Handler();
+
+    private ActivityResultLauncher<String> requestPermissionLauncher;
 
     TextView countSteps;
     TextView userName;
@@ -63,10 +61,16 @@ public class DashboardFragment extends Fragment {
     }
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        startProgressBarThread();
-        if (ContextCompat.checkSelfPermission(this.getContext(), Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this.getActivity(), new String[] {Manifest.permission.ACTIVITY_RECOGNITION}, 1);
-        }
+        requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+            if (isGranted) {
+                // Permission is granted
+                // Do something here
+            } else {
+                // Permission is not granted
+                // Do something here
+            }
+        });
+
     }
 
     @Override
@@ -77,12 +81,11 @@ public class DashboardFragment extends Fragment {
             showToast("Sensors not available for this device!");
         }
         countSteps = rootView.findViewById(R.id.tvDailySteps);
+        startProgressBarThread();
         userName = rootView.findViewById(R.id.tvUserName);
         circularProgressIndicator = rootView.findViewById(R.id.progressBarSteps);
         percentageGoal = rootView.findViewById(R.id.tvPercentageGoal);
         circularProgressIndicator.setMax(100);
-
-        sensorManager = (SensorManager) this.getContext().getSystemService(SENSOR_SERVICE);
         ServiceConnection serviceConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
@@ -98,33 +101,12 @@ public class DashboardFragment extends Fragment {
 
             }
         };
-//        resetNumStepsHandler = new Handler();
-//        resetNumStepsRunnable = () -> {
-//            countSteps.setText("");
-//            resetNumStepsHandler.postDelayed(resetNumStepsRunnable, getTimeUntilMidnight());
-//        };
-
-        //resetNumStepsHandler.postDelayed(resetNumStepsRunnable, getTimeUntilMidnight());
-
         Intent serviceIntent = new Intent(getActivity(), StepService.class);
         getActivity().bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
-        //registerSensorListeners();
+
+        requestPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION);
         loadSharePrefsData();
-        //startProgressBarThread();
         return rootView;
-    }
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        switch (requestCode) {
-            case 1: {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Permission granted, start using the step counter sensor
-                } else {
-                    // Permission denied, handle accordingly
-                }
-            }
-            return;
-        }
     }
 
     @Override
@@ -185,42 +167,41 @@ public class DashboardFragment extends Fragment {
 
     }
     public void startProgressBarThread(){
-        progressBarbHandler.postDelayed(new Runnable() {
+        countSteps.addTextChangedListener(new TextWatcher() {
             @Override
-            public void run() {
-                double i  = convertStepsToProgress();
-                int percentage;
-                if(i > 100){
-                    circularProgressIndicator.setProgress(100);
-                    percentageGoal.setText("Contratulations! You reached your step goal");
-                }
-                if (i <= 100) { //maybe its i<=10000
-                    circularProgressIndicator.setProgress((int) i);
-                    percentageGoal.setText("You have walked " + (int) i +"% of today's goal.");
-                    i++;
-                    progressBarbHandler.postDelayed(this, 200);
-                } else {
-                    progressBarbHandler.removeCallbacks(this);
-                }
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
             }
-        }, 200);
-    }
-    private long getTimeUntilMidnight() {
-        Calendar midnightCalendar = Calendar.getInstance();
-        midnightCalendar.set(Calendar.HOUR_OF_DAY, 24);
-        midnightCalendar.set(Calendar.MINUTE, 0);
-        midnightCalendar.set(Calendar.SECOND, 0);
-        midnightCalendar.set(Calendar.MILLISECOND, 0);
 
-        long currentTime = System.currentTimeMillis();
-        long midnightTime = midnightCalendar.getTimeInMillis();
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                progressBarbHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        double i  = convertStepsToProgress();
+                        int percentage;
+                        if(i > 100){
+                            circularProgressIndicator.setProgress(100);
+                            percentageGoal.setText("Contratulations! You reached your step goal");
+                        }
+                        if (i <= 100) {
+                            circularProgressIndicator.setProgress((int) i);
+                            percentageGoal.setText("You have walked " + (int) i +"% of today's goal.");
+                            i++;
+                            progressBarbHandler.postDelayed(this, 200);
+                        } else {
+                            progressBarbHandler.removeCallbacks(this);
+                        }
+                    }
+                }, 200);
+            }
 
-        if (midnightTime < currentTime) {
-            midnightCalendar.add(Calendar.DAY_OF_MONTH, 1);
-            midnightTime = midnightCalendar.getTimeInMillis();
-        }
+            @Override
+            public void afterTextChanged(Editable editable) {
 
-        return midnightTime - currentTime;
+            }
+        });
+
     }
 
 }

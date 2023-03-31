@@ -32,6 +32,7 @@ import ro.android.thesis.MainActivity;
 import ro.android.thesis.R;
 import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.User;
+import ro.android.thesis.utils.KeyboardUtils;
 
 public class HealthInfoFragment extends Fragment {
     private static SyncConfiguration syncConfiguration;
@@ -65,6 +66,7 @@ public class HealthInfoFragment extends Fragment {
         etSignUpHeight = rootView.findViewById(R.id.etSignupHeight);
         etSignUpWeight = rootView.findViewById(R.id.etSignupWeight);
 
+
         spinSignUpGender = rootView.findViewById(R.id.spinSignUpGender);
         ArrayAdapter<CharSequence> spinnerAdapter = ArrayAdapter.createFromResource(this.getContext(),
                 R.array.genders_array, android.R.layout.simple_spinner_item);
@@ -77,7 +79,7 @@ public class HealthInfoFragment extends Fragment {
         spinnerActivityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinSignUpActivity.setAdapter(spinnerActivityAdapter);
 
-
+        KeyboardUtils.setupUI(rootView, this.getActivity());
         btnSignUp = rootView.findViewById(R.id.btnSignUp);
         btnSignUp.setOnClickListener(view -> {
             loadingDialog.setCancelable(false);

@@ -54,6 +54,7 @@ public class PersonalInfoFragment extends Fragment {
         etSignUpName = rootView.findViewById(R.id.etSignupName);
         etSignupEmail = rootView.findViewById(R.id.etSignupEmail);
         etSignupPassword = rootView.findViewById(R.id.etSignupPassword);
+        KeyboardUtils.setupUI(rootView, this.getActivity());
         btnBirthDatePicker = rootView.findViewById(R.id.btnBirthDatePicker);
         btnBirthDatePicker.setText(getTodaysDate());
         btnBirthDatePicker.setOnClickListener(new View.OnClickListener() {
