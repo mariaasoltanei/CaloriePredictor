@@ -14,7 +14,7 @@ public class ResetStepCountTask extends TimerTask {
     @Override
     public void run() {
         Calendar now = Calendar.getInstance();
-        if (now.get(Calendar.HOUR_OF_DAY) == 0 && now.get(Calendar.MINUTE) == 0) {
+        if (now.get(Calendar.HOUR_OF_DAY) == 20 && now.get(Calendar.MINUTE) == 53) {
             stepService.resetStepCount();
         }
     }

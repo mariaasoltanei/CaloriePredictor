@@ -136,7 +136,7 @@ public class CalAidApp extends Application {
 //                                    .equalTo("userId", CalAidApp.getApp().currentUser().getId())));
 //                })
 //                .build();
-        Log.w("TIME", String.valueOf(Calendar.getInstance().get(Calendar.HOUR_OF_DAY)));
+        Log.w("TIMEAAA", String.valueOf(Calendar.getInstance().get(Calendar.HOUR_OF_DAY)));
 
 
 

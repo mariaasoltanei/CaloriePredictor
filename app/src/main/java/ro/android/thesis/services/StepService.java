@@ -54,7 +54,6 @@ public class StepService extends Service implements SensorEventListener {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "onCreate: Service created");
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         if (stepSensor != null) {
@@ -74,11 +73,11 @@ public class StepService extends Service implements SensorEventListener {
         }
 
         Calendar midnight = Calendar.getInstance();
-        midnight.set(Calendar.HOUR_OF_DAY, 0);
-        midnight.set(Calendar.MINUTE, 0);
+        midnight.set(Calendar.HOUR_OF_DAY, 20);
+        midnight.set(Calendar.MINUTE,53);
         midnight.set(Calendar.SECOND, 0);
         midnight.set(Calendar.MILLISECOND, 0);
-        resetTimer.schedule(new ResetStepCountTask(this), midnight.getTime(), TimeUnit.DAYS.toMillis(1));
+        resetTimer.scheduleAtFixedRate(new ResetStepCountTask(this), midnight.getTime(), TimeUnit.DAYS.toMillis(1));
 
         startForeground(1002, notification.build());
     }
@@ -127,9 +126,8 @@ public class StepService extends Service implements SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent event) {
         stepCount = (int) event.values[0];
-        //stepsSinceServiceStarted = stepCount - initialStepCount;
         updateStepCount(stepCount - initialStepCount);
-        Log.d(TAG, "onSensorChanged: Step count updated: " + stepCount);
+        Log.d(TAG, "onSensorChanged: Step count: " + stepCount);
     }
 
     @Override
@@ -142,7 +140,7 @@ public class StepService extends Service implements SensorEventListener {
     private void createNotificationChannel(String CHANNEL_ID) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name = "CalAidApp";
-            String description = "Collecting accelerometer data";
+            String description = "Collecting steps";
             int importance = NotificationManager.IMPORTANCE_DEFAULT;
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);
