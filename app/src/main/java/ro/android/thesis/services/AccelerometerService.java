@@ -24,40 +24,71 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import io.realm.Realm;
+import io.realm.mongodb.User;
+import io.realm.mongodb.sync.SyncConfiguration;
+import ro.android.thesis.AuthenticationObserver;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
 import ro.android.thesis.domain.AccelerometerData;
 
-public class AccelerometerService extends Service implements SensorEventListener {
+public class AccelerometerService extends Service implements SensorEventListener, AuthenticationObserver {
+    private final ArrayList<AccelerometerData> accelerometerDataList = new ArrayList<>();
     private SensorManager sensorManager;
     private Sensor sensorAccelerometer;
-    private Realm realm;
+    private Realm realmAccelerometerService;
     private Handler handler;
     private Runnable runnable;
-    private final ArrayList<AccelerometerData> accelerometerDataList = new ArrayList<>();
+    private CalAidApp calAidApp;
+
+    private SyncConfiguration syncConfiguration;
+    private User user;
+    private String userId;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        realm = Realm.getInstance(CalAidApp.getSyncConfigurationMain());
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        handler = new Handler();
-        runnable = new Runnable() {
-            @Override
-            public void run() {
-                sendDataToMongoDB();
-                handler.postDelayed(this, 30000);
-            }
-        };
-        handler.postDelayed(runnable, 30000);
+        calAidApp = (CalAidApp) getApplicationContext();
+        calAidApp.addObserver(this);
+
+        //realm = Realm.getInstance(calAidApp.getSyncConfigurationMain());
+//        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+//        sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+//        handler = new Handler();
+//        runnable = new Runnable() {
+//            @Override
+//            public void run() {
+//                sendDataToMongoDB();
+//                handler.postDelayed(this, 10000);
+//            }
+//        };
+//        handler.postDelayed(runnable, 10000);
 
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Realm.getInstanceAsync(calAidApp.getSyncConfigurationMain(), new Realm.Callback() {
+            @Override
+            public void onSuccess(Realm realm) {
+                realmAccelerometerService = realm;
+                userId = calAidApp.getAppUser().getId();
+                handler = new Handler();
+                runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d("CALAIDAPP -Acc service", "heloooooooooooooooo");
+                        sendDataToMongoDB();
+                        handler.postDelayed(this, 10000);
+                    }
+                };
+                handler.postDelayed(runnable, 10000);
+            }
+        });
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         sensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+
         final String CHANNELID = "Foreground Service ID";
         createNotificationChannel(CHANNELID);
         Notification.Builder notification = new Notification.Builder(this, CHANNELID)
@@ -72,9 +103,10 @@ public class AccelerometerService extends Service implements SensorEventListener
     @Override
     public void onDestroy() {
         super.onDestroy();
-        realm.close();
+        realmAccelerometerService.close();
         sensorManager.unregisterListener(this);
         handler.removeCallbacks(runnable);
+        calAidApp.removeObserver(this);
     }
 
     @Nullable
@@ -88,35 +120,26 @@ public class AccelerometerService extends Service implements SensorEventListener
         Log.d("AccelerometerService", "AccelerometerService/" + sensorEvent.values[0] + " " + sensorEvent.values[1] + " " + sensorEvent.values[2]);
         AccelerometerData data = new AccelerometerData();
         data.setId(new ObjectId());
-        data.setUserId(CalAidApp.getApp().currentUser().getId());
+        data.setUserId(userId);
         data.setX(sensorEvent.values[0]);
         data.setY(sensorEvent.values[1]);
         data.setZ(sensorEvent.values[2]);
         data.setTimestamp(new Date(System.currentTimeMillis()));
         accelerometerDataList.add(data);
-
     }
 
+    //TODO: send data even if the 10 seconds did not pass -  send what is left in the array
     private void sendDataToMongoDB() {
         if (accelerometerDataList.size() > 0) {
             final ArrayList<AccelerometerData> dataToSend = new ArrayList<>(accelerometerDataList);
             accelerometerDataList.clear();
-            realm.executeTransactionAsync(new Realm.Transaction() {
+            realmAccelerometerService.executeTransactionAsync(new Realm.Transaction() {
                 @Override
                 public void execute(Realm realm) {
                     realm.insert(dataToSend);
                 }
-            }, new Realm.Transaction.OnSuccess() {
-                @Override
-                public void onSuccess() {
-                    Log.d("AccelerometerService", "Data sent to MongoDB");
-                }
-            }, new Realm.Transaction.OnError() {
-                @Override
-                public void onError(Throwable error) {
-                    Log.e("AccelerometerService", "Error sending data to MongoDB", error);
-                }
-            });
+            }, () -> Log.d("AccelerometerService", "Data sent to MongoDB"),
+                    error -> Log.e("AccelerometerService", "Error sending data to MongoDB", error));
         }
     }
 
@@ -134,6 +157,19 @@ public class AccelerometerService extends Service implements SensorEventListener
             channel.setDescription(description);
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    @Override
+    public void update(SyncConfiguration syncConfiguration, User user) {
+        if (syncConfiguration == null && user == null) {
+            stopForeground(true);
+   //         sensorManager.unregisterListener(this);
+//            realmAccelerometerService.close();
+            stopSelf();
+        } else {
+            Log.d("CALAIDAPP -Acc service", String.valueOf(calAidApp.getSyncConfigurationMain()));
+
         }
     }
 }

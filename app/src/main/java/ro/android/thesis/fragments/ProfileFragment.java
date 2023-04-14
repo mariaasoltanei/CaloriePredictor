@@ -5,8 +5,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,16 +19,13 @@ import androidx.fragment.app.Fragment;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import org.bson.types.ObjectId;
-
 import java.lang.reflect.Type;
 
 import io.realm.Realm;
-import io.realm.RealmResults;
+import io.realm.mongodb.sync.SyncConfiguration;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
 import ro.android.thesis.dialogs.LoadingDialog;
-import ro.android.thesis.domain.AccelerometerData;
 import ro.android.thesis.domain.User;
 import ro.android.thesis.utils.KeyboardUtils;
 
@@ -46,6 +41,9 @@ public class ProfileFragment extends Fragment {
     Handler handler = new Handler(Looper.getMainLooper());
     User userCopy;
 
+    SyncConfiguration syncConfiguration;
+    io.realm.mongodb.User mongoUser;
+
     LoadingDialog loadingDialog = new LoadingDialog();
 
     public ProfileFragment() {
@@ -59,8 +57,8 @@ public class ProfileFragment extends Fragment {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                realm = Realm.getInstance(CalAidApp.getSyncConfigurationMain());
-                final User user  = realm.where(User.class).equalTo("email", getUserEmail()).findFirst();
+                realm = Realm.getInstance(syncConfiguration);
+                final User user = realm.where(User.class).equalTo("email", getUserEmail()).findFirst();
 //                RealmResults<AccelerometerData> results = realm.where(AccelerometerData.class).findAll();
 //                realm.executeTransaction(realm -> results.deleteAllFromRealm());
                 userCopy = realm.copyFromRealm(user);
@@ -82,7 +80,8 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        CalAidApp calAidApp = (CalAidApp) getActivity().getApplicationContext();
+        syncConfiguration = calAidApp.getSyncConfigurationMain();
     }
 
     @Override
@@ -104,7 +103,7 @@ public class ProfileFragment extends Fragment {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        realm = Realm.getInstance(CalAidApp.getSyncConfigurationMain());
+                        realm = Realm.getInstance(syncConfiguration);
                         realm.executeTransaction(new Realm.Transaction() {
                             @Override
                             public void execute(Realm realm) {
@@ -143,6 +142,7 @@ public class ProfileFragment extends Fragment {
         User user = gson.fromJson(userLogged, type);
         return user.getEmail();
     }
+
     private void addUserToSharedPreferences(User user) {
         SharedPreferences sharedPref = this.getContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();

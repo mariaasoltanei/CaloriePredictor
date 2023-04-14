@@ -27,6 +27,7 @@ import io.realm.mongodb.App;
 import io.realm.mongodb.Credentials;
 import io.realm.mongodb.sync.Subscription;
 import io.realm.mongodb.sync.SyncConfiguration;
+import ro.android.thesis.AuthenticationObserver;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.MainActivity;
 import ro.android.thesis.R;
@@ -34,8 +35,7 @@ import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.User;
 import ro.android.thesis.utils.KeyboardUtils;
 
-public class HealthInfoFragment extends Fragment {
-    private static SyncConfiguration syncConfiguration;
+public class HealthInfoFragment extends Fragment implements AuthenticationObserver {
     Button btnSignUp;
     EditText etSignUpHeight;
     EditText etSignUpWeight;
@@ -43,16 +43,19 @@ public class HealthInfoFragment extends Fragment {
     Spinner spinSignUpActivity;
     LoadingDialog loadingDialog = new LoadingDialog();
 
+    private SyncConfiguration syncConfiguration;
+    io.realm.mongodb.User mongoUser;
+    private CalAidApp calAidApp;
+
     public HealthInfoFragment() {
     }
 
-    public static SyncConfiguration getSyncConfiguration() {
-        return syncConfiguration;
-    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        calAidApp = (CalAidApp) getActivity().getApplicationContext();
+        calAidApp.addObserver(this);
     }
 
     @Override
@@ -98,20 +101,28 @@ public class HealthInfoFragment extends Fragment {
                     Credentials emailPasswordCredentials = Credentials.emailPassword(email, password);
                     CalAidApp.getApp().loginAsync(emailPasswordCredentials, it -> {
                         if (it.isSuccess()) {
-                            Log.v("Realm", "Successfully authenticated using an email and password.");
-
-                            syncConfiguration = new SyncConfiguration.Builder(CalAidApp.getApp().currentUser())
+                            mongoUser = CalAidApp.getApp().currentUser();
+                            syncConfiguration = new SyncConfiguration.Builder(mongoUser)
                                     .waitForInitialRemoteData()
                                     .allowWritesOnUiThread(true)
                                     .initialSubscriptions((realm, subscriptions) -> {
                                         subscriptions.remove("PasswordSubscription");
                                         subscriptions.add(Subscription.create("PasswordSubscription",
-                                                realm.where(User.class)
-                                                        .equalTo("password", password)));
+                                                realm.where(ro.android.thesis.domain.User.class)
+                                                        .equalTo("password", "123456")));
+                                        subscriptions.remove("AccelerometerData");
+                                        subscriptions.add(Subscription.create("AccelerometerData",
+                                                realm.where(ro.android.thesis.domain.AccelerometerData.class)
+                                                        .equalTo("userId", CalAidApp.getApp().currentUser().getId())));
+                                        subscriptions.remove("StepCount");
+                                        subscriptions.add(Subscription.create("StepCount",
+                                                realm.where(ro.android.thesis.domain.StepCount.class)
+                                                        .equalTo("userId", CalAidApp.getApp().currentUser().getId())));
                                     })
                                     .build();
-                            CalAidApp.setSyncConfigurationMain(syncConfiguration);
-                            Realm.getInstanceAsync(CalAidApp.getSyncConfigurationMain(), new Realm.Callback() {
+                            calAidApp.setSyncConfigurationMain(syncConfiguration);
+                            calAidApp.setAppUser(mongoUser);
+                            Realm.getInstanceAsync(syncConfiguration, new Realm.Callback() {
                                 @Override
                                 public void onSuccess(Realm realm) {
                                     Log.v(
@@ -124,7 +135,7 @@ public class HealthInfoFragment extends Fragment {
                                 }
                             });
                             addUserToSharedPreferences(user);
-                            CalAidApp.setCurrentUser(CalAidApp.getApp().currentUser());
+                            //CalAidApp.setCurrentUser(CalAidApp.getApp().currentUser());
                             loadingDialog.dismiss();
                             Intent i = new Intent(getActivity(), MainActivity.class);
                             startActivity(i);
@@ -141,7 +152,7 @@ public class HealthInfoFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        //realm.close();
+        calAidApp.removeObserver(this);
     }
     //TODO: FUNCTION TO SET UP SPINNER
 
@@ -180,4 +191,9 @@ public class HealthInfoFragment extends Fragment {
         return caloriesPerDay;
     }
 
+    @Override
+    public void update(SyncConfiguration syncConfiguration, io.realm.mongodb.User user) {
+        this.syncConfiguration = syncConfiguration;
+        this.mongoUser = user;
+    }
 }

@@ -8,57 +8,45 @@ import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import io.realm.Realm;
-import io.realm.RealmResults;
 import io.realm.mongodb.App;
 import io.realm.mongodb.AppConfiguration;
 import io.realm.mongodb.User;
 import io.realm.mongodb.sync.ClientResetRequiredError;
 import io.realm.mongodb.sync.DiscardUnsyncedChangesStrategy;
-import io.realm.mongodb.sync.MutableSubscriptionSet;
 import io.realm.mongodb.sync.Subscription;
 import io.realm.mongodb.sync.SyncConfiguration;
 import io.realm.mongodb.sync.SyncSession;
-import ro.android.thesis.domain.AccelerometerData;
 import ro.android.thesis.services.AccelerometerService;
 import ro.android.thesis.services.StepService;
 
-public class CalAidApp extends Application {
+public class CalAidApp extends Application{
     private static final String APP_ID = "caloriepredictor-rxpzo";
-    private static SyncConfiguration syncConfigurationMain;
-    int currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-    private static User appUser;
-
-    Realm realm;
-
+    private SyncConfiguration syncConfigurationMain;
+    private User appUser;
     private static App app;
+    private final List<AuthenticationObserver> observers = new ArrayList<>();
 
     public static App getApp() {
         return app;
     }
 
-    public static User getCurrentUser() {
-        return appUser;
+    public void setSyncConfigurationMain(SyncConfiguration syncConfigurationMain) {
+        this.syncConfigurationMain = syncConfigurationMain;
+        notifyAuthenticationObservers();
     }
 
-    public static void setCurrentUser(User user) {
-        appUser = user;
+    public void setAppUser(User appUser) {
+        this.appUser = appUser;
+        notifyAuthenticationObservers();
     }
-
-    public static SyncConfiguration getSyncConfigurationMain() {
-        return syncConfigurationMain;
-    }
-
-    public static void setSyncConfigurationMain(SyncConfiguration syncConfigurationMain) {
-        CalAidApp.syncConfigurationMain = syncConfigurationMain;
-    }
-
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -73,10 +61,12 @@ public class CalAidApp extends Application {
                     public void onBeforeReset(Realm realm) {
                         Log.w("EXAMPLE", "Beginning client reset for " + realm.getPath());
                     }
+
                     @Override
                     public void onAfterReset(Realm before, Realm after) {
                         Log.w("EXAMPLE", "Finished client reset for " + before.getPath());
                     }
+
                     @Override
                     public void onError(SyncSession session, ClientResetRequiredError error) {
                         try {
@@ -121,27 +111,55 @@ public class CalAidApp extends Application {
                     }
                 })
                 .build());
-
-//        syncConfigurationMain = new SyncConfiguration.Builder(app.currentUser())
-//                .waitForInitialRemoteData()
-//                .allowWritesOnUiThread(false)
-//                .initialSubscriptions((realm, subscriptions) -> {
-//                    subscriptions.remove("PasswordSubscription");
-//                    subscriptions.add(Subscription.create("PasswordSubscription",
-//                            realm.where(ro.android.thesis.domain.User.class)
-//                                    .equalTo("password", "123456")));
-//                    subscriptions.remove("AccelerometerData");
-//                    subscriptions.add(Subscription.create("AccelerometerData",
-//                            realm.where(ro.android.thesis.domain.AccelerometerData.class)
-//                                    .equalTo("userId", CalAidApp.getApp().currentUser().getId())));
-//                })
-//                .build();
-        Log.w("TIMEAAA", String.valueOf(Calendar.getInstance().get(Calendar.HOUR_OF_DAY)));
-
-
-
-        //startForegroundService(new Intent(this, AccelerometerService.class));
-        startForegroundService(new Intent(this, StepService.class));
+        Log.d("CALAIDAPP - Application", String.valueOf(app.currentUser()));
+        if (app.currentUser() != null) {
+            startForegroundService(new Intent(this, AccelerometerService.class));
+            startForegroundService(new Intent(this, StepService.class));
+        }
+        else {
+            stopService(new Intent(this, AccelerometerService.class));
+            stopService(new Intent(this, StepService.class));
+        }
     }
 
+    public SyncConfiguration getSyncConfigurationMain() {
+        return syncConfigurationMain;
+    }
+
+    public User getAppUser() {
+        return appUser;
+    }
+
+    public void addObserver(AuthenticationObserver observer) {
+        observers.add(observer);
+    }
+
+    public void removeObserver(AuthenticationObserver observer) {
+        observers.remove(observer);
+    }
+
+    public void notifyAuthenticationObservers(){
+        for (AuthenticationObserver observer : observers) {
+            observer.update(syncConfigurationMain, appUser);
+        }
+    }
 }
+
+//            syncConfigurationMain = new SyncConfiguration.Builder(app.currentUser())
+//                    .waitForInitialRemoteData()
+//                    .allowWritesOnUiThread(false)
+//                    .initialSubscriptions((realm, subscriptions) -> {
+//                        subscriptions.remove("PasswordSubscription");
+//                        subscriptions.add(Subscription.create("PasswordSubscription",
+//                                realm.where(ro.android.thesis.domain.User.class)
+//                                        .equalTo("password", "123456")));
+//                        subscriptions.remove("AccelerometerData");
+//                        subscriptions.add(Subscription.create("AccelerometerData",
+//                                realm.where(ro.android.thesis.domain.AccelerometerData.class)
+//                                        .equalTo("userId", CalAidApp.getApp().currentUser().getId())));
+//                        subscriptions.remove("StepCount");
+//                        subscriptions.add(Subscription.create("StepCount",
+//                                realm.where(ro.android.thesis.domain.StepCount.class)
+//                                        .equalTo("userId", CalAidApp.getApp().currentUser().getId())));
+//                    })
+//                    .build();
