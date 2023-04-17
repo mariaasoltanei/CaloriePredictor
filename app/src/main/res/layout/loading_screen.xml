@@ -16,16 +16,6 @@
         android:layout_margin="8dp"
         android:orientation="vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:padding="16px"
-            android:fontFamily="@font/roboto_black"
-            android:text="Loading..."
-            android:textColor="@color/black"
-            android:textSize="24dp" />
-
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/loadingSpinner"
             android:layout_width="wrap_content"
@@ -44,6 +34,16 @@
             app:trackColor="@color/paleGreen_60transparency"
             app:trackCornerRadius="10dp"
             app:trackThickness="13dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:padding="16px"
+            android:fontFamily="@font/roboto_black"
+            android:text="Loading..."
+            android:textColor="@color/black"
+            android:textSize="24dp" />
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

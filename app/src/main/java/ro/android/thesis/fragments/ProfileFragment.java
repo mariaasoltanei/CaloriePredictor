@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -43,6 +44,7 @@ public class ProfileFragment extends Fragment {
 
     SyncConfiguration syncConfiguration;
     io.realm.mongodb.User mongoUser;
+    CalAidApp calAidApp;
 
     LoadingDialog loadingDialog = new LoadingDialog();
 
@@ -52,6 +54,28 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
+
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        calAidApp = (CalAidApp) getActivity().getApplication();
+        syncConfiguration = calAidApp.getSyncConfigurationMain();
+
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View rootView = inflater.inflate(R.layout.fragment_profile, container, false);
+        //etUpdateEmail = rootView.findViewById(R.id.etUpdateEmail);
+        etUpdateHeight = rootView.findViewById(R.id.etUpdateHeight);
+
+        etUpdateWeight = rootView.findViewById(R.id.etUpdateWeight);
+        btnSaveUpdate = rootView.findViewById(R.id.btnSaveUpdate);
+        btnUpdatePassword = rootView.findViewById(R.id.btnUpdatePassword);
+        KeyboardUtils.setupUI(rootView, this.getActivity());
+
         loadingDialog.setCancelable(false);
         loadingDialog.show(getChildFragmentManager(), "loading_screen");
         new Thread(new Runnable() {
@@ -74,27 +98,6 @@ public class ProfileFragment extends Fragment {
                 realm.close();
             }
         }).start();
-
-    }
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        CalAidApp calAidApp = (CalAidApp) getActivity().getApplicationContext();
-        syncConfiguration = calAidApp.getSyncConfigurationMain();
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_profile, container, false);
-        //etUpdateEmail = rootView.findViewById(R.id.etUpdateEmail);
-        etUpdateHeight = rootView.findViewById(R.id.etUpdateHeight);
-
-        etUpdateWeight = rootView.findViewById(R.id.etUpdateWeight);
-        btnSaveUpdate = rootView.findViewById(R.id.btnSaveUpdate);
-        btnUpdatePassword = rootView.findViewById(R.id.btnUpdatePassword);
-        KeyboardUtils.setupUI(rootView, this.getActivity());
-
         btnSaveUpdate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -113,6 +116,7 @@ public class ProfileFragment extends Fragment {
                                 realm.insertOrUpdate(userCopy);
                             }
                         });
+                        showToast("Data saved!");
                         addUserToSharedPreferences(userCopy);
                         loadingDialog.dismiss();
                         realm.close();
@@ -131,6 +135,15 @@ public class ProfileFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
 
+    }
+    public void showToast(final String message)
+    {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private String getUserEmail() {

@@ -20,37 +20,45 @@ import android.os.IBinder;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
-
-import com.google.gson.Gson;
+import androidx.annotation.RequiresApi;
 
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 import io.realm.Realm;
+import io.realm.mongodb.User;
+import io.realm.mongodb.sync.SyncConfiguration;
+import ro.android.thesis.AuthenticationObserver;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
 import ro.android.thesis.domain.StepCount;
-import ro.android.thesis.domain.User;
 
 
-public class StepService extends Service implements SensorEventListener {
+public class StepService extends Service implements SensorEventListener, AuthenticationObserver {
     public static final String STEP_COUNT_ACTION = "ro.android.thesis.services.STEP_COUNT_ACTION";
     public static final String EXTRA_STEP_COUNT = "ro.android.thesis.services.EXTRA_STEP_COUNT";
-    private static final String TAG = "StepCountService";
     private static final int SENSOR_DELAY = SensorManager.SENSOR_DELAY_NORMAL;
-    private final IBinder binder = new StepCountBinder();
-    private SensorManager sensorManager;
-    private Sensor stepSensor;
+    private static final String TAG = "StepCountService";
     private int totalSteps = 0;
     private int stepsToday = 0;
-    private Realm realm;
+
+    private SensorManager sensorManager;
+    private Sensor stepSensor;
+
+    private final IBinder binder = new StepCountBinder();
+    private final ArrayList<StepCount> stepCountList = new ArrayList<>();
+
+    private Realm realmStepService;
     private Handler handler;
     private Runnable runnable;
-    private final ArrayList<StepCount> stepCountList = new ArrayList<>();
+    private CalAidApp calAidApp;
+
+    private SyncConfiguration syncConfiguration;
+    private User user;
+    private String userId;
 
     @Nullable
     @Override
@@ -61,59 +69,67 @@ public class StepService extends Service implements SensorEventListener {
     @Override
     public void onCreate() {
         super.onCreate();
-        //realm = Realm.getInstance(CalAidApp.getSyncConfigurationMain());
-        handler = new Handler();
-        runnable = new Runnable() {
-            @Override
-            public void run() {
-                //sendStepsToMongoDB();
+        calAidApp = (CalAidApp) getApplicationContext();
+        calAidApp.addObserver(this);
+        Log.d(TAG, "TOTAL STEPS " + totalSteps);
+    }
 
-                handler.postDelayed(this, 30000);
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "onStartCommand: Service started");
+        Realm.getInstanceAsync(calAidApp.getSyncConfigurationMain(), new Realm.Callback() {
+            @Override
+            public void onSuccess(Realm realm) {
+                realmStepService = realm;
+                userId = calAidApp.getAppUser().getId();
+                handler = new Handler();
+                runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d("CALAIDAPP -Step service", "steps");
+                        //sendStepsToMongoDB();
+
+                        handler.postDelayed(this, 10000);
+                    }
+                };
+                handler.postDelayed(runnable, 10000);
             }
-        };
-        handler.postDelayed(runnable, 30000);
-        Log.d(TAG, "TOTAL STEPS " + String.valueOf(totalSteps));
+        });
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         if (stepSensor != null) {
             sensorManager.registerListener(this, stepSensor, SENSOR_DELAY);
             stepsToday = totalSteps;
-            Log.d(TAG, "stepsToday onStart " + String.valueOf(stepsToday));
+            Log.d(TAG, "stepsToday onStart " + stepsToday);
         } else {
             Log.e(TAG, "onCreate: Step sensor not available");
         }
         getStepsFromSharedPreferences();
 
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "onStartCommand: Service started");
-
         final String CHANNELID = "Foreground Service ID 2";
         createNotificationChannel(CHANNELID);
-        Notification.Builder notification = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            notification = new Notification.Builder(this, CHANNELID)
-                    .setContentText("Collecting steps..")
-                    .setContentTitle("")
-                    .setSmallIcon(R.drawable.icon_launcher);
-        }
-        //getStepsFromSharedPreferences();
-        resetStepCount();
+        Notification.Builder notification = new Notification.Builder(this, CHANNELID)
+                .setContentText("Collecting steps..")
+                .setContentTitle("")
+                .setSmallIcon(R.drawable.icon_launcher);
 
-        startForeground(1002, notification.build());
+    resetStepCount();
+
+    startForeground(1002, notification.build());
         return super.onStartCommand(intent, flags, startId);
-    }
+}
 
+    @Override
     public void onDestroy() {
-        super.onDestroy();
         Log.d(TAG, "onDestroy: Service destroyed");
+        super.onDestroy();
         addStepsToSharedPreferences();
+
         sensorManager.unregisterListener(this);
         handler.removeCallbacks(runnable);
-//        realm.close();
-
+        realmStepService.close();
+        calAidApp.removeObserver(this);
     }
 
     private void updateStepCount(int stepCount) {
@@ -149,13 +165,12 @@ public class StepService extends Service implements SensorEventListener {
         totalSteps = (int) event.values[0];
         updateStepCount(totalSteps - stepsToday);
         Log.d(TAG, "onSensorChanged: Step count: " + totalSteps);
-//        StepCount data = new StepCount();
-//        data.set_id(new ObjectId());
-//        data.setUserId(CalAidApp.getApp().currentUser().getId());
-//        data.setNoSteps(totalSteps);;
-//        data.setTimestamp(new Date(System.currentTimeMillis()));
-//        stepCountList.add(data);
-        Log.d(TAG, "onSensorChanged: Step count: " + totalSteps);
+        StepCount data = new StepCount();
+        data.set_id(new ObjectId());
+        data.setUserId(userId);
+        data.setNoSteps(totalSteps);
+        data.setTimestamp(new Date(System.currentTimeMillis()));
+        stepCountList.add(data);
     }
 
     @Override
@@ -182,27 +197,17 @@ public class StepService extends Service implements SensorEventListener {
         if (stepCountList.size() > 0) {
             final ArrayList<StepCount> stepCountSend = new ArrayList<>(stepCountList);
             stepCountList.clear();
-            realm.executeTransactionAsync(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    realm.insert(stepCountSend);
-                }
-            }, new Realm.Transaction.OnSuccess() {
-                @Override
-                public void onSuccess() {
-                    Log.d(TAG, "Data sent to MongoDB");
-                }
-            }, new Realm.Transaction.OnError() {
-                @Override
-                public void onError(Throwable error) {
-                    Log.e(TAG, "Error sending data to MongoDB", error);
-                }
-            });
+            realmStepService.executeTransactionAsync(new Realm.Transaction() {
+                                                         @Override
+                                                         public void execute(Realm realm) {
+                                                             realm.insert(stepCountSend);
+                                                         }
+                                                     }, () -> Log.d("StepService", "Data sent to MongoDB"),
+                    error -> Log.e("StepService", "Error sending data to MongoDB", error));
         }
-        else {
-            Log.d(TAG, "dASDA");
-        }
+
     }
+
     private void addStepsToSharedPreferences() {
         SharedPreferences sharedPref = this.getSharedPreferences("stepCount", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
@@ -211,16 +216,28 @@ public class StepService extends Service implements SensorEventListener {
         editor.apply();
     }
 
-    private void getStepsFromSharedPreferences(){
+    private void getStepsFromSharedPreferences() {
         SharedPreferences sharedPref = this.getSharedPreferences("stepCount", Context.MODE_PRIVATE);
         int savedSteps = sharedPref.getInt("numSteps", 0);
         Log.d(TAG, String.valueOf(savedSteps));
         stepsToday = savedSteps;
     }
 
-    public class StepCountBinder extends Binder {
-        public StepService getService() {
-            return StepService.this;
+    @Override
+    public void update(SyncConfiguration syncConfiguration, User user) {
+        if (syncConfiguration == null && user == null) {
+            stopForeground(true);
+            //realmStepService.close();
+            stopSelf();
+        } else {
+            Log.d("CALAIDAPP -step service", String.valueOf(calAidApp.getSyncConfigurationMain()));
+
         }
     }
+
+public class StepCountBinder extends Binder {
+    public StepService getService() {
+        return StepService.this;
+    }
+}
 }

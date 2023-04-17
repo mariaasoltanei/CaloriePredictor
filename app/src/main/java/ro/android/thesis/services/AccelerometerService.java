@@ -32,9 +32,11 @@ import ro.android.thesis.R;
 import ro.android.thesis.domain.AccelerometerData;
 
 public class AccelerometerService extends Service implements SensorEventListener, AuthenticationObserver {
+    private static final String TAG = "AccelerometerService";
     private final ArrayList<AccelerometerData> accelerometerDataList = new ArrayList<>();
     private SensorManager sensorManager;
     private Sensor sensorAccelerometer;
+
     private Realm realmAccelerometerService;
     private Handler handler;
     private Runnable runnable;
@@ -49,25 +51,16 @@ public class AccelerometerService extends Service implements SensorEventListener
         super.onCreate();
         calAidApp = (CalAidApp) getApplicationContext();
         calAidApp.addObserver(this);
-
-        //realm = Realm.getInstance(calAidApp.getSyncConfigurationMain());
-//        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-//        sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-//        handler = new Handler();
-//        runnable = new Runnable() {
-//            @Override
-//            public void run() {
-//                sendDataToMongoDB();
-//                handler.postDelayed(this, 10000);
-//            }
-//        };
-//        handler.postDelayed(runnable, 10000);
-
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "onStartCommand: Service started");
+        if(calAidApp.getSyncConfigurationMain() == null){
+            stopSelf();
+            stopForeground(true);
+        }
         Realm.getInstanceAsync(calAidApp.getSyncConfigurationMain(), new Realm.Callback() {
             @Override
             public void onSuccess(Realm realm) {
@@ -78,7 +71,7 @@ public class AccelerometerService extends Service implements SensorEventListener
                     @Override
                     public void run() {
                         Log.d("CALAIDAPP -Acc service", "heloooooooooooooooo");
-                        sendDataToMongoDB();
+                        //sendDataToMongoDB();
                         handler.postDelayed(this, 10000);
                     }
                 };
@@ -102,6 +95,7 @@ public class AccelerometerService extends Service implements SensorEventListener
 
     @Override
     public void onDestroy() {
+        Log.d(TAG, "onDestroy: Service destroyed");
         super.onDestroy();
         realmAccelerometerService.close();
         sensorManager.unregisterListener(this);
@@ -117,7 +111,7 @@ public class AccelerometerService extends Service implements SensorEventListener
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        Log.d("AccelerometerService", "AccelerometerService/" + sensorEvent.values[0] + " " + sensorEvent.values[1] + " " + sensorEvent.values[2]);
+        Log.d(TAG,+ sensorEvent.values[0] + " " + sensorEvent.values[1] + " " + sensorEvent.values[2]);
         AccelerometerData data = new AccelerometerData();
         data.setId(new ObjectId());
         data.setUserId(userId);
@@ -138,8 +132,8 @@ public class AccelerometerService extends Service implements SensorEventListener
                 public void execute(Realm realm) {
                     realm.insert(dataToSend);
                 }
-            }, () -> Log.d("AccelerometerService", "Data sent to MongoDB"),
-                    error -> Log.e("AccelerometerService", "Error sending data to MongoDB", error));
+            }, () -> Log.d(TAG, "Data sent to MongoDB"),
+                    error -> Log.e(TAG, "Error sending data to MongoDB", error));
         }
     }
 
@@ -164,8 +158,6 @@ public class AccelerometerService extends Service implements SensorEventListener
     public void update(SyncConfiguration syncConfiguration, User user) {
         if (syncConfiguration == null && user == null) {
             stopForeground(true);
-   //         sensorManager.unregisterListener(this);
-//            realmAccelerometerService.close();
             stopSelf();
         } else {
             Log.d("CALAIDAPP -Acc service", String.valueOf(calAidApp.getSyncConfigurationMain()));

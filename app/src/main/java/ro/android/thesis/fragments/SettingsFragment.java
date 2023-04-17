@@ -71,29 +71,32 @@ public class SettingsFragment extends Fragment implements AuthenticationObserver
         editor.apply();
         loadingDialog.setCancelable(false);
         loadingDialog.show(getChildFragmentManager(), "loading_screen");
-//                            loadingDialog.dismiss();
-//        calAidApp.setSyncConfigurationMain(null);
-//        calAidApp.setAppUser(null);
-//                    Intent i = new Intent(getActivity(), LogInActivity.class);
-//                    startActivity(i);
+        loadingDialog.dismiss();
+        calAidApp.setSyncConfigurationMain(null);
+        calAidApp.setAppUser(null);
+        Intent i = new Intent(getActivity(), LogInActivity.class);
+        startActivity(i);
         if (sharedPref.getString("user", null) == null) {
             Log.d("Realm", "Cleared Shared prefs");
-            calAidApp.getAppUser().logOutAsync(result -> {
-                if(result.isSuccess()){
-                    Log.d("CALAIDAPP", "User Logged out");
-                    Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));
-                    Log.d("CALAIDAPP", String.valueOf(calAidApp.getSyncConfigurationMain()));
-                    calAidApp.setSyncConfigurationMain(null);
-                    Log.d("CALAIDAPP", String.valueOf(calAidApp.getSyncConfigurationMain()));
-                    if(calAidApp.getAppUser() != null){
-                        calAidApp.setAppUser(null);
-                        //Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));
-                    }
-                    loadingDialog.dismiss();
-                    Intent i = new Intent(getActivity(), LogInActivity.class);
-                    startActivity(i);
-                }
-            });
+            //getActivity().getApplicationContext().startActivity(new Intent(this, StepService.class));
+//            calAidApp.getAppUser().logOutAsync(result -> {
+//                if(result.isSuccess()){
+//                    Log.d("CALAIDAPP", "User Logged out");
+//                    Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));
+//                    Log.d("CALAIDAPP", String.valueOf(calAidApp.getSyncConfigurationMain()));
+//                    calAidApp.setSyncConfigurationMain(null);
+//                    Log.d("CALAIDAPP", String.valueOf(calAidApp.getSyncConfigurationMain()));
+//                    calAidApp.stopService(new Intent(calAidApp, AccelerometerService.class));
+//                    calAidApp.stopService(new Intent(calAidApp, StepService.class));
+//                    if(calAidApp.getAppUser() != null){
+//                        calAidApp.setAppUser(null);
+//                        //Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));
+//                    }
+//                    loadingDialog.dismiss();
+//                    Intent i = new Intent(getActivity(), LogInActivity.class);
+//                    startActivity(i);
+//                }
+//            });
         }
     }
 

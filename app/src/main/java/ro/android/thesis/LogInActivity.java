@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
@@ -14,6 +15,7 @@ import com.google.gson.Gson;
 
 import io.realm.Realm;
 import io.realm.RealmQuery;
+import io.realm.mongodb.App;
 import io.realm.mongodb.Credentials;
 import io.realm.mongodb.sync.Subscription;
 import io.realm.mongodb.sync.SyncConfiguration;
@@ -32,9 +34,11 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
     EditText etLoginPassword;
     User currentUser;
     User currentUserSharedPrefs;
+
     io.realm.mongodb.User mongoUser;
     SyncConfiguration syncConfiguration;
     private CalAidApp calAidApp;
+    Realm getRealm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,75 +62,7 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
 
         btnLogin = findViewById(R.id.btnLogIn);
         btnLogin.setOnClickListener(view -> {
-            loadingDialog.setCancelable(false);
-            loadingDialog.show(getSupportFragmentManager(), "loading_screen");
-            Credentials emailPasswordCredentials = Credentials.emailPassword(etLoginEmail.getText().toString(), etLoginPassword.getText().toString());
-            CalAidApp.getApp().loginAsync(emailPasswordCredentials, it -> {
-                if (it.isSuccess()) {
-                    mongoUser = CalAidApp.getApp().currentUser();
-                    calAidApp.setAppUser(mongoUser);
-                    syncConfiguration = new SyncConfiguration.Builder(mongoUser)
-                            .waitForInitialRemoteData()
-                            .allowWritesOnUiThread(false)
-                            .initialSubscriptions((realm, subscriptions) -> {
-                                subscriptions.remove("PasswordSubscription");
-                                subscriptions.add(Subscription.create("PasswordSubscription",
-                                        realm.where(ro.android.thesis.domain.User.class)
-                                                .equalTo("password", "123456")));
-                                subscriptions.remove("AccelerometerData");
-                                subscriptions.add(Subscription.create("AccelerometerData",
-                                        realm.where(ro.android.thesis.domain.AccelerometerData.class)
-                                                .equalTo("userId", CalAidApp.getApp().currentUser().getId())));
-                                subscriptions.remove("StepCount");
-                                subscriptions.add(Subscription.create("StepCount",
-                                        realm.where(ro.android.thesis.domain.StepCount.class)
-                                                .equalTo("userId", CalAidApp.getApp().currentUser().getId())));
-                            })
-                            .build();
-                    calAidApp.setSyncConfigurationMain(syncConfiguration);
-                    Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));
-                    Realm.getInstanceAsync(syncConfiguration, new Realm.Callback() {
-                        @Override
-                        public void onSuccess(Realm realm) {
-                            Log.v(
-                                    "Realm",
-                                    "LoginActivity/Successfully opened a realm. UI THREAD"
-                            );
-                            RealmQuery<User> query = realm.where(User.class).equalTo("email", etLoginEmail.getText().toString()).equalTo("password", etLoginPassword.getText().toString());
-                            currentUser = query.findFirst();
-                            if (currentUser == null) {
-                                Log.d("Realm", "LoginActivity/No user found");
-                                //Todo: Add login errors
-                            } else {
-                                Log.d("Realm", "LoginActivity/" + currentUser.getId() + currentUser.getClass() + currentUser.getFirstName());
-                                currentUserSharedPrefs = new User(currentUser.getId(),
-                                        currentUser.getFirstName(),
-                                        currentUser.getEmail(),
-                                        currentUser.getPassword(),
-                                        currentUser.getBirthDate(),
-                                        currentUser.getHeight(),
-                                        currentUser.getWeight(),
-                                        currentUser.getGender(),
-                                        currentUser.getActivityMultiplier());
-                                addUserToSharedPreferences(currentUserSharedPrefs);
-                                getApplicationContext().startService(new Intent(getApplicationContext(), AccelerometerService.class));
-                                getApplicationContext().startService(new Intent(getApplicationContext(), StepService.class));
-                                realm.close();
-                                loadingDialog.dismiss();
-
-                                final Intent mainIntent = new Intent(getApplicationContext(), MainActivity.class);
-                                startActivity(mainIntent);
-                            }
-
-                        }
-                    });
-
-                } else {
-                    Log.e("Realm", it.getError().toString());
-                }
-            });
-
-
+            loginUser(etLoginEmail.getText().toString(), etLoginPassword.getText().toString());
         });
     }
 
@@ -134,6 +70,7 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
     protected void onDestroy() {
         super.onDestroy();
         calAidApp.removeObserver(this);
+       // getRealm.close();
     }
 
     private void addUserToSharedPreferences(User user) {
@@ -145,6 +82,87 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
         editor.apply();
     }
 
+    public void loginUser(String email, String password){
+        loadingDialog.setCancelable(false);
+        loadingDialog.show(getSupportFragmentManager(), "loading_screen");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Looper.prepare();
+                Credentials emailPasswordCredentials = Credentials.emailPassword(email, password);
+                CalAidApp.getApp().loginAsync(emailPasswordCredentials, new App.Callback<io.realm.mongodb.User>() {
+                    @Override
+                    public void onResult(App.Result<io.realm.mongodb.User> resultLogin) {
+                        if(resultLogin.isSuccess()){
+                            mongoUser = CalAidApp.getApp().currentUser();
+                            calAidApp.setAppUser(mongoUser);
+                            syncConfiguration = new SyncConfiguration.Builder(mongoUser)
+                                    .waitForInitialRemoteData()
+                                    .allowWritesOnUiThread(false)
+                                    .initialSubscriptions((realm, subscriptions) -> {
+                                        subscriptions.remove("PasswordSubscription");
+                                        subscriptions.add(Subscription.create("PasswordSubscription",
+                                                realm.where(ro.android.thesis.domain.User.class)
+                                                        .equalTo("password", password)));
+                                        subscriptions.remove("AccelerometerData");
+                                        subscriptions.add(Subscription.create("AccelerometerData",
+                                                realm.where(ro.android.thesis.domain.AccelerometerData.class)
+                                                        .equalTo("userId", calAidApp.getAppUser().getId())));
+                                        subscriptions.remove("StepCount");
+                                        subscriptions.add(Subscription.create("StepCount",
+                                                realm.where(ro.android.thesis.domain.StepCount.class)
+                                                        .equalTo("userId", calAidApp.getAppUser().getId())));
+                                    })
+                                    .build();
+                            calAidApp.setSyncConfigurationMain(syncConfiguration);
+                            Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));
+                            Log.d("CALAIDAPP", String.valueOf(calAidApp.getSyncConfigurationMain()));
+                            getRealm =  Realm.getInstance(syncConfiguration);
+                            getRealm.executeTransaction(new Realm.Transaction() {
+                                @Override
+                                public void execute(Realm realm) {
+                                    RealmQuery<User> query = realm.where(User.class).equalTo("email", email).equalTo("password", password);
+                                    currentUser = query.findFirst();
+                                    if(currentUser != null){
+                                        currentUserSharedPrefs = new User(currentUser.getId(),
+                                                currentUser.getFirstName(),
+                                                currentUser.getEmail(),
+                                                currentUser.getPassword(),
+                                                currentUser.getBirthDate(),
+                                                currentUser.getHeight(),
+                                                currentUser.getWeight(),
+                                                currentUser.getGender(),
+                                                currentUser.getActivityMultiplier());
+                                        addUserToSharedPreferences(currentUserSharedPrefs);
+                                        Intent mainIntent = new Intent(getApplicationContext(), MainActivity.class);
+                                        startActivity(mainIntent);
+                                        loadingDialog.dismiss();
+                                        getRealm.close();
+                                    }
+                                    else {
+                                        Log.e("Realm", "LoginActivity/No user found");
+                                    }
+                                }
+                            });
+                            getApplicationContext().startService(new Intent(getApplicationContext(), AccelerometerService.class));
+                            getApplicationContext().startService(new Intent(getApplicationContext(), StepService.class));
+                        }
+                        else{
+                            loadingDialog.dismiss();
+                            calAidApp.setAppUser(null);
+                            calAidApp.setSyncConfigurationMain(null);
+                            Log.e("LoginActivity", resultLogin.getError().toString());
+                        }
+                    }
+                });
+
+                Looper.loop();
+            }
+        }).start();
+
+
+
+    }
     @Override
     public void update(SyncConfiguration syncConfiguration, io.realm.mongodb.User user) {
         this.syncConfiguration = syncConfiguration;

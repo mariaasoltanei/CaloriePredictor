@@ -9,7 +9,6 @@ import android.util.Log;
 import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,31 +20,23 @@ import io.realm.mongodb.AppConfiguration;
 import io.realm.mongodb.User;
 import io.realm.mongodb.sync.ClientResetRequiredError;
 import io.realm.mongodb.sync.DiscardUnsyncedChangesStrategy;
-import io.realm.mongodb.sync.Subscription;
 import io.realm.mongodb.sync.SyncConfiguration;
 import io.realm.mongodb.sync.SyncSession;
 import ro.android.thesis.services.AccelerometerService;
 import ro.android.thesis.services.StepService;
 
-public class CalAidApp extends Application{
+public class CalAidApp extends Application {
     private static final String APP_ID = "caloriepredictor-rxpzo";
-    private SyncConfiguration syncConfigurationMain;
-    private User appUser;
     private static App app;
     private final List<AuthenticationObserver> observers = new ArrayList<>();
+    private SyncConfiguration syncConfigurationMain;
+    private User appUser;
+
+    public boolean isAccServiceRunning;
+    public boolean isStepServiceRunning;
 
     public static App getApp() {
         return app;
-    }
-
-    public void setSyncConfigurationMain(SyncConfiguration syncConfigurationMain) {
-        this.syncConfigurationMain = syncConfigurationMain;
-        notifyAuthenticationObservers();
-    }
-
-    public void setAppUser(User appUser) {
-        this.appUser = appUser;
-        notifyAuthenticationObservers();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -111,14 +102,24 @@ public class CalAidApp extends Application{
                     }
                 })
                 .build());
+
         Log.d("CALAIDAPP - Application", String.valueOf(app.currentUser()));
-        if (app.currentUser() != null) {
-            startForegroundService(new Intent(this, AccelerometerService.class));
-            startForegroundService(new Intent(this, StepService.class));
-        }
-        else {
-            stopService(new Intent(this, AccelerometerService.class));
-            stopService(new Intent(this, StepService.class));
+        Log.d("CALAIDAPP - Application", String.valueOf(syncConfigurationMain));
+
+        if (app.currentUser() != null && syncConfigurationMain == null) {
+            /**DEBUGGING*/
+//            app.currentUser().logOutAsync(new App.Callback<User>() {
+//                @Override
+//                public void onResult(App.Result<User> result) {
+//                    Log.d("CALAIDAPP - Application", String.valueOf(app.currentUser()));
+//                }
+//            });
+
+            isAccServiceRunning = true;
+            isStepServiceRunning = true;
+        } else {
+            isAccServiceRunning = false;
+            isStepServiceRunning = false;
         }
     }
 
@@ -126,8 +127,18 @@ public class CalAidApp extends Application{
         return syncConfigurationMain;
     }
 
+    public void setSyncConfigurationMain(SyncConfiguration syncConfigurationMain) {
+        this.syncConfigurationMain = syncConfigurationMain;
+        notifyAuthenticationObservers();
+    }
+
     public User getAppUser() {
         return appUser;
+    }
+
+    public void setAppUser(User appUser) {
+        this.appUser = appUser;
+        notifyAuthenticationObservers();
     }
 
     public void addObserver(AuthenticationObserver observer) {
@@ -138,28 +149,9 @@ public class CalAidApp extends Application{
         observers.remove(observer);
     }
 
-    public void notifyAuthenticationObservers(){
+    public void notifyAuthenticationObservers() {
         for (AuthenticationObserver observer : observers) {
             observer.update(syncConfigurationMain, appUser);
         }
     }
 }
-
-//            syncConfigurationMain = new SyncConfiguration.Builder(app.currentUser())
-//                    .waitForInitialRemoteData()
-//                    .allowWritesOnUiThread(false)
-//                    .initialSubscriptions((realm, subscriptions) -> {
-//                        subscriptions.remove("PasswordSubscription");
-//                        subscriptions.add(Subscription.create("PasswordSubscription",
-//                                realm.where(ro.android.thesis.domain.User.class)
-//                                        .equalTo("password", "123456")));
-//                        subscriptions.remove("AccelerometerData");
-//                        subscriptions.add(Subscription.create("AccelerometerData",
-//                                realm.where(ro.android.thesis.domain.AccelerometerData.class)
-//                                        .equalTo("userId", CalAidApp.getApp().currentUser().getId())));
-//                        subscriptions.remove("StepCount");
-//                        subscriptions.add(Subscription.create("StepCount",
-//                                realm.where(ro.android.thesis.domain.StepCount.class)
-//                                        .equalTo("userId", CalAidApp.getApp().currentUser().getId())));
-//                    })
-//                    .build();

@@ -28,7 +28,7 @@
         <service
             android:name=".services.StepService"
             android:enabled="true"
-            android:label="Accelerometer Service" >
+            android:label="Step Service" >
         </service>
 
         <activity android:name=".MainActivity" />

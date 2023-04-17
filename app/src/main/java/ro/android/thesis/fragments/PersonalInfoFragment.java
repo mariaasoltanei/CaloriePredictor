@@ -18,9 +18,12 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import java.util.Calendar;
+import java.util.regex.Pattern;
 
 import ro.android.thesis.R;
+import ro.android.thesis.dialogs.ErrorDialog;
 import ro.android.thesis.fragments.HealthInfoFragment;
+import ro.android.thesis.utils.InputValidationUtils;
 import ro.android.thesis.utils.KeyboardUtils;
 
 public class PersonalInfoFragment extends Fragment {
@@ -32,6 +35,7 @@ public class PersonalInfoFragment extends Fragment {
 
     private DatePickerDialog datePickerDialog;
     private Button btnBirthDatePicker;
+    ErrorDialog errorDialog;
 
     public PersonalInfoFragment() {
     }
@@ -68,20 +72,33 @@ public class PersonalInfoFragment extends Fragment {
         btnNext.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Bundle bundleAccountInfo = new Bundle();
-                bundleAccountInfo.putString("name", etSignUpName.getText().toString());
-                bundleAccountInfo.putString("email", etSignupEmail.getText().toString());
-                bundleAccountInfo.putString("password", etSignupPassword.getText().toString());
-                bundleAccountInfo.putString("birthDate", btnBirthDatePicker.getText().toString());
+                if(InputValidationUtils.isValidEmail(etSignupEmail.getText().toString()) && InputValidationUtils.isValidPassword(etSignupPassword.getText().toString())){
+                    Bundle bundleAccountInfo = new Bundle();
+                    bundleAccountInfo.putString("name", etSignUpName.getText().toString());
+                    bundleAccountInfo.putString("email", etSignupEmail.getText().toString());
+                    bundleAccountInfo.putString("password", etSignupPassword.getText().toString());
+                    bundleAccountInfo.putString("birthDate", btnBirthDatePicker.getText().toString());
 
-                FragmentManager fragmentManager = requireActivity().getSupportFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                HealthInfoFragment healthInfoFragment = new HealthInfoFragment();
-                healthInfoFragment.setArguments(bundleAccountInfo);
-                fragmentTransaction.replace(R.id.signupHostFragment, healthInfoFragment);
-                fragmentTransaction.addToBackStack(null);
-                fragmentTransaction.commit();
-
+                    FragmentManager fragmentManager = requireActivity().getSupportFragmentManager();
+                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                    HealthInfoFragment healthInfoFragment = new HealthInfoFragment();
+                    healthInfoFragment.setArguments(bundleAccountInfo);
+                    fragmentTransaction.replace(R.id.signupHostFragment, healthInfoFragment);
+                    fragmentTransaction.addToBackStack(null);
+                    fragmentTransaction.commit();
+                }
+                else if(!InputValidationUtils.isValidEmail(etSignupEmail.getText().toString())){
+                    errorDialog = new ErrorDialog("Please enter a valid email.");
+                    errorDialog.show(getChildFragmentManager(), "error_dialog");
+                }
+                else if(!InputValidationUtils.isValidPassword(etSignupPassword.getText().toString())){
+                    errorDialog = new ErrorDialog("Please enter a password that contains at least 6 characters, at least one uppercase letter, at least one special character and at least one number.");
+                    errorDialog.show(getChildFragmentManager(), "error_dialog");
+                }
+                else {
+                    errorDialog = new ErrorDialog("Please enter a valid email and password.");
+                    errorDialog.show(getChildFragmentManager(), "error_dialog");
+                }
             }
         });
         return rootView;

@@ -1,7 +1,5 @@
 package ro.android.thesis.fragments;
 
-import static android.content.Context.SENSOR_SERVICE;
-
 import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
@@ -10,18 +8,9 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
-
 import android.os.IBinder;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -31,6 +20,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.gson.Gson;
@@ -56,9 +50,11 @@ public class DashboardFragment extends Fragment {
     TextView userName;
     TextView percentageGoal;
     CircularProgressIndicator circularProgressIndicator;
-    public DashboardFragment(){
+
+    public DashboardFragment() {
 
     }
+
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -77,7 +73,7 @@ public class DashboardFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_dashboard, container, false);
 
-        if(!stepSensorsAvailable()){
+        if (!stepSensorsAvailable()) {
             showToast("Sensors not available for this device!");
         }
         countSteps = rootView.findViewById(R.id.tvDailySteps);
@@ -123,20 +119,22 @@ public class DashboardFragment extends Fragment {
         super.onPause();
         getActivity().unregisterReceiver(stepCountReceiver);
     }
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
 //        resetNumStepsHandler.removeCallbacks(resetNumStepsRunnable);
     }
-    public boolean stepSensorsAvailable(){
+
+    public boolean stepSensorsAvailable() {
         PackageManager packageManager = this.getContext().getPackageManager();
         int apiVersion = Build.VERSION.SDK_INT;
         return apiVersion >= 19 && packageManager.hasSystemFeature(PackageManager.FEATURE_SENSOR_STEP_COUNTER)
                 && packageManager.hasSystemFeature(PackageManager.FEATURE_SENSOR_STEP_DETECTOR)
                 && packageManager.hasSystemFeature(PackageManager.FEATURE_SENSOR_ACCELEROMETER);
     }
-    public void showToast(final String message)
-    {
+
+    public void showToast(final String message) {
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -145,7 +143,7 @@ public class DashboardFragment extends Fragment {
         });
     }
 
-    private void loadSharePrefsData(){
+    private void loadSharePrefsData() {
         SharedPreferences sharedPref = this.getContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
         String userLogged = sharedPref.getString("user", null);
         Gson gson = new Gson();
@@ -154,19 +152,21 @@ public class DashboardFragment extends Fragment {
         user = gson.fromJson(userLogged, type);
 
         Log.d("SHARED PREFS TEST", String.valueOf(user));
-        if(user != null) {
-            userName.setText("Hi, "+user.getFirstName() +"!");
+        if (user != null) {
+            userName.setText("Hi, " + user.getFirstName() + "!");
         }
     }
-    public double convertStepsToProgress(){
+
+    public double convertStepsToProgress() {
         double noSteps = Double.parseDouble(String.valueOf(countSteps.getText()));
-        if(noSteps == 0) {
+        if (noSteps == 0) {
             return 1 * 0;
         }
-        return (double) (noSteps*0.01);
+        return (double) (noSteps * 0.01);
 
     }
-    public void startProgressBarThread(){
+
+    public void startProgressBarThread() {
         countSteps.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -178,15 +178,15 @@ public class DashboardFragment extends Fragment {
                 progressBarbHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        double i  = convertStepsToProgress();
+                        double i = convertStepsToProgress();
                         int percentage;
-                        if(i > 100){
+                        if (i > 100) {
                             circularProgressIndicator.setProgress(100);
                             percentageGoal.setText("Contratulations! You reached your step goal");
                         }
                         if (i <= 100) {
                             circularProgressIndicator.setProgress((int) i);
-                            percentageGoal.setText("You have walked " + (int) i +"% of today's goal.");
+                            percentageGoal.setText("You have walked " + (int) i + "% of today's goal.");
                             i++;
                             progressBarbHandler.postDelayed(this, 200);
                         } else {

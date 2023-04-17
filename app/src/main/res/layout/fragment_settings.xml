@@ -18,6 +18,8 @@
         style="@style/btn_style"
         android:textSize="16dp"
         android:drawableLeft="@drawable/ic_baseline_power"
-        android:background="@drawable/input_text" />
+        android:background="@color/white"
+        android:layout_marginBottom="28dp"
+        />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
