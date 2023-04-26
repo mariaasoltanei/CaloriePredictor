@@ -37,6 +37,8 @@ import ro.android.thesis.R;
 import ro.android.thesis.dialogs.ErrorDialog;
 import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.User;
+import ro.android.thesis.services.AccelerometerService;
+import ro.android.thesis.services.StepService;
 import ro.android.thesis.utils.KeyboardUtils;
 
 public class HealthInfoFragment extends Fragment implements AuthenticationObserver {
@@ -204,6 +206,12 @@ public class HealthInfoFragment extends Fragment implements AuthenticationObserv
                                         });
                                         Log.d("CALAIDAPP-SignUp", String.valueOf(calAidApp.getSyncConfigurationMain()));
                                         addUserToSharedPreferences(user);
+                                        Intent startAccServiceIntent = new Intent(getActivity().getApplicationContext(), AccelerometerService.class);
+                                        startAccServiceIntent.setAction("startAccService");
+                                        getActivity().getApplicationContext().startService(startAccServiceIntent);
+                                        Intent startStepServiceIntent = new Intent(getActivity().getApplicationContext(), StepService.class);
+                                        startStepServiceIntent.setAction("startStepService");
+                                        getActivity().getApplicationContext().getApplicationContext().startService(startStepServiceIntent);
                                         Intent mainIntent = new Intent(getActivity(), MainActivity.class);
                                         startActivity(mainIntent);
                                         loadingDialog.dismiss();

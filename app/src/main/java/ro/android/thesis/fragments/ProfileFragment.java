@@ -23,10 +23,13 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 
 import io.realm.Realm;
+import io.realm.RealmResults;
 import io.realm.mongodb.sync.SyncConfiguration;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
 import ro.android.thesis.dialogs.LoadingDialog;
+import ro.android.thesis.domain.AccelerometerData;
+import ro.android.thesis.domain.StepCount;
 import ro.android.thesis.domain.User;
 import ro.android.thesis.utils.KeyboardUtils;
 
@@ -83,8 +86,10 @@ public class ProfileFragment extends Fragment {
             public void run() {
                 realm = Realm.getInstance(syncConfiguration);
                 final User user = realm.where(User.class).equalTo("email", getUserEmail()).findFirst();
-//                RealmResults<AccelerometerData> results = realm.where(AccelerometerData.class).findAll();
-//                realm.executeTransaction(realm -> results.deleteAllFromRealm());
+                RealmResults<AccelerometerData> results = realm.where(AccelerometerData.class).findAll();
+                realm.executeTransaction(realm -> results.deleteAllFromRealm());
+                RealmResults<StepCount> resultsSteps = realm.where(StepCount.class).findAll();
+                realm.executeTransaction(realm -> resultsSteps.deleteAllFromRealm());
                 userCopy = realm.copyFromRealm(user);
                 Log.d("Realm", "ProfileFragment/" + userCopy);
                 handler.post(new Runnable() {

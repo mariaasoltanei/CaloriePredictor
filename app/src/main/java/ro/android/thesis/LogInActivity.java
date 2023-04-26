@@ -19,10 +19,12 @@ import io.realm.mongodb.App;
 import io.realm.mongodb.Credentials;
 import io.realm.mongodb.sync.Subscription;
 import io.realm.mongodb.sync.SyncConfiguration;
+import ro.android.thesis.dialogs.ErrorDialog;
 import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.User;
 import ro.android.thesis.services.AccelerometerService;
 import ro.android.thesis.services.StepService;
+import ro.android.thesis.utils.InputValidationUtils;
 import ro.android.thesis.utils.KeyboardUtils;
 
 public class LogInActivity extends AppCompatActivity implements AuthenticationObserver {
@@ -30,6 +32,7 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
     Button btnRegister;
 
     LoadingDialog loadingDialog = new LoadingDialog();
+    ErrorDialog errorDialog;
     EditText etLoginEmail;
     EditText etLoginPassword;
     User currentUser;
@@ -70,7 +73,6 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
     protected void onDestroy() {
         super.onDestroy();
         calAidApp.removeObserver(this);
-       // getRealm.close();
     }
 
     private void addUserToSharedPreferences(User user) {
@@ -89,6 +91,9 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
             @Override
             public void run() {
                 Looper.prepare();
+//                if(InputValidationUtils.isValidEmail(etSignupEmail.getText().toString()) && InputValidationUtils.isValidPassword(etSignupPassword.getText().toString())){
+//
+//                }
                 Credentials emailPasswordCredentials = Credentials.emailPassword(email, password);
                 CalAidApp.getApp().loginAsync(emailPasswordCredentials, new App.Callback<io.realm.mongodb.User>() {
                     @Override
@@ -136,16 +141,23 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
                                         addUserToSharedPreferences(currentUserSharedPrefs);
                                         Intent mainIntent = new Intent(getApplicationContext(), MainActivity.class);
                                         startActivity(mainIntent);
-                                        loadingDialog.dismiss();
-                                        getRealm.close();
+
                                     }
                                     else {
                                         Log.e("Realm", "LoginActivity/No user found");
                                     }
                                 }
                             });
-                            getApplicationContext().startService(new Intent(getApplicationContext(), AccelerometerService.class));
-                            getApplicationContext().startService(new Intent(getApplicationContext(), StepService.class));
+                            Intent startAccServiceIntent = new Intent(getApplicationContext(), AccelerometerService.class);
+                            startAccServiceIntent.setAction("startAccService");
+                            startService(startAccServiceIntent);
+                            Intent startStepServiceIntent = new Intent(getApplicationContext(), StepService.class);
+                            startStepServiceIntent.setAction("startStepService");
+                            startService(startStepServiceIntent);
+                            loadingDialog.dismiss();
+                            getRealm.close();
+                            //getApplicationContext().startService(new Intent(getApplicationContext(), AccelerometerService.class));
+                            //getApplicationContext().startService(new Intent(getApplicationContext(), StepService.class));
                         }
                         else{
                             loadingDialog.dismiss();
@@ -155,7 +167,6 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
                         }
                     }
                 });
-
                 Looper.loop();
             }
         }).start();

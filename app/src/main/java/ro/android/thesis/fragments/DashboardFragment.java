@@ -1,6 +1,7 @@
 package ro.android.thesis.fragments;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -25,6 +26,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.gson.Gson;
@@ -32,15 +34,21 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 
+import ro.android.thesis.AuthenticationObserver;
 import ro.android.thesis.R;
+import ro.android.thesis.StepServiceViewModel;
 import ro.android.thesis.broadcasts.StepCountReceiver;
 import ro.android.thesis.domain.User;
 import ro.android.thesis.services.StepService;
 
 
 public class DashboardFragment extends Fragment {
+    private final String TAG = "DashboardFragment";
     User user;
-    private StepCountReceiver stepCountReceiver;
+
+    private StepServiceViewModel stepServiceViewModel;
+    public StepCountReceiver stepCountReceiver;
+    ServiceConnection serviceConnection;
 
     private Handler progressBarbHandler = new Handler();
 
@@ -50,6 +58,15 @@ public class DashboardFragment extends Fragment {
     TextView userName;
     TextView percentageGoal;
     CircularProgressIndicator circularProgressIndicator;
+    StepService.StepCountBinder binder;
+
+    public StepCountReceiver getStepCountReceiver() {
+        return stepCountReceiver;
+    }
+
+    public ServiceConnection getServiceConnection() {
+        return serviceConnection;
+    }
 
     public DashboardFragment() {
 
@@ -57,6 +74,8 @@ public class DashboardFragment extends Fragment {
 
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate");
+        //setRetainInstance(true);
         requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
             if (isGranted) {
                 // Permission is granted
@@ -72,20 +91,24 @@ public class DashboardFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_dashboard, container, false);
+        Log.d(TAG, "onCreateView");
+        Log.d(TAG, getActivity().toString());
 
         if (!stepSensorsAvailable()) {
             showToast("Sensors not available for this device!");
         }
+        stepServiceViewModel = new ViewModelProvider(requireActivity()).get(StepServiceViewModel.class);
         countSteps = rootView.findViewById(R.id.tvDailySteps);
         startProgressBarThread();
         userName = rootView.findViewById(R.id.tvUserName);
         circularProgressIndicator = rootView.findViewById(R.id.progressBarSteps);
         percentageGoal = rootView.findViewById(R.id.tvPercentageGoal);
         circularProgressIndicator.setMax(100);
-        ServiceConnection serviceConnection = new ServiceConnection() {
+
+        serviceConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-                StepService.StepCountBinder binder = (StepService.StepCountBinder) iBinder;
+                binder = (StepService.StepCountBinder) iBinder;
                 StepService service = binder.getService();
                 int stepCount = service.getStepCount();
                 Log.d("STEP COUNTER", "DashboardFragment/" + stepCount);
@@ -94,12 +117,13 @@ public class DashboardFragment extends Fragment {
 
             @Override
             public void onServiceDisconnected(ComponentName componentName) {
-
+                binder = null;
             }
         };
-        Intent serviceIntent = new Intent(getActivity(), StepService.class);
-        getActivity().bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+        stepServiceViewModel.setStepServiceConnection(serviceConnection);
 
+        Intent serviceIntent = new Intent(getActivity(), StepService.class);
+        this.getActivity().bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
         requestPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION);
         loadSharePrefsData();
         return rootView;
@@ -108,6 +132,7 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        Log.d(TAG, "onResume");
         stepCountReceiver = new StepCountReceiver(countSteps);
         IntentFilter filter = new IntentFilter();
         filter.addAction(StepService.STEP_COUNT_ACTION);
@@ -117,13 +142,23 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
+        Log.d(TAG, "onPause");
         getActivity().unregisterReceiver(stepCountReceiver);
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        Log.d(TAG, "onDestroyView");
+        //getActivity().unregisterReceiver(stepCountReceiver);
 //        resetNumStepsHandler.removeCallbacks(resetNumStepsRunnable);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy");
+
     }
 
     public boolean stepSensorsAvailable() {
@@ -202,6 +237,9 @@ public class DashboardFragment extends Fragment {
             }
         });
 
+    }
+    public void unregisterReceiver() {
+        getActivity().unregisterReceiver(stepCountReceiver);
     }
 
 }

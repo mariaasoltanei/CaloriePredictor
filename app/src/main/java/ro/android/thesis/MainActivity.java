@@ -1,7 +1,9 @@
 package ro.android.thesis;
 
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -12,6 +14,7 @@ import android.widget.TextView;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.NavigationUI;
@@ -30,6 +33,7 @@ import ro.android.thesis.services.StepService;
 public class MainActivity extends AppCompatActivity {
     TextView navMenuName;
     private Context context;
+    ServiceConnection serviceConnection;
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -37,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         context = this;
+        StepServiceViewModel stepServiceViewModel = new ViewModelProvider(this).get(StepServiceViewModel.class);
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
         findViewById(R.id.imgIconMenu).setOnClickListener(view -> drawerLayout.openDrawer(Gravity.LEFT));
         NavigationView navigationView = findViewById(R.id.navigationView);
@@ -63,6 +68,10 @@ public class MainActivity extends AppCompatActivity {
         if (user != null) {
             navMenuName.setText(user.getFirstName());
         }
+    }
+
+    public void unbindStepService(){
+
     }
 
 }

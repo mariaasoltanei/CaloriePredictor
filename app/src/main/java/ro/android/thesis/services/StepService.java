@@ -37,11 +37,12 @@ import ro.android.thesis.R;
 import ro.android.thesis.domain.StepCount;
 
 
-public class StepService extends Service implements SensorEventListener, AuthenticationObserver {
+public class StepService extends Service implements SensorEventListener {
     public static final String STEP_COUNT_ACTION = "ro.android.thesis.services.STEP_COUNT_ACTION";
     public static final String EXTRA_STEP_COUNT = "ro.android.thesis.services.EXTRA_STEP_COUNT";
     private static final int SENSOR_DELAY = SensorManager.SENSOR_DELAY_NORMAL;
     private static final String TAG = "StepCountService";
+    private boolean isStepServiceRunning;
     private int totalSteps = 0;
     private int stepsToday = 0;
 
@@ -70,7 +71,7 @@ public class StepService extends Service implements SensorEventListener, Authent
     public void onCreate() {
         super.onCreate();
         calAidApp = (CalAidApp) getApplicationContext();
-        calAidApp.addObserver(this);
+       // calAidApp.addObserver(this);
         Log.d(TAG, "TOTAL STEPS " + totalSteps);
     }
 
@@ -78,46 +79,57 @@ public class StepService extends Service implements SensorEventListener, Authent
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand: Service started");
-        Realm.getInstanceAsync(calAidApp.getSyncConfigurationMain(), new Realm.Callback() {
-            @Override
-            public void onSuccess(Realm realm) {
-                realmStepService = realm;
-                userId = calAidApp.getAppUser().getId();
-                handler = new Handler();
-                runnable = new Runnable() {
+        if(intent != null){
+            if(intent.getAction() == "startStepService"){
+                isStepServiceRunning = true;
+                Realm.getInstanceAsync(calAidApp.getSyncConfigurationMain(), new Realm.Callback() {
                     @Override
-                    public void run() {
-                        Log.d("CALAIDAPP -Step service", "steps");
-                        //sendStepsToMongoDB();
+                    public void onSuccess(Realm realm) {
+                        realmStepService = realm;
+                        userId = calAidApp.getAppUser().getId();
+                        handler = new Handler();
+                        runnable = new Runnable() {
+                            @Override
+                            public void run() {
+                                Log.d("CALAIDAPP -Step service", "steps");
+                                //sendStepsToMongoDB();
 
-                        handler.postDelayed(this, 10000);
+                                handler.postDelayed(this, 10000);
+                            }
+                        };
+                        handler.postDelayed(runnable, 10000);
                     }
-                };
-                handler.postDelayed(runnable, 10000);
+                });
+                sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+                stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+                if (stepSensor != null) {
+                    sensorManager.registerListener(this, stepSensor, SENSOR_DELAY);
+                    stepsToday = totalSteps;
+                    Log.d(TAG, "stepsToday onStart " + stepsToday);
+                } else {
+                    Log.e(TAG, "onCreate: Step sensor not available");
+                }
+                getStepsFromSharedPreferences();
+
+                final String CHANNELID = "Foreground Service ID 2";
+                createNotificationChannel(CHANNELID);
+                Notification.Builder notification = new Notification.Builder(this, CHANNELID)
+                        .setContentText("Collecting steps..")
+                        .setContentTitle("")
+                        .setSmallIcon(R.drawable.icon_launcher);
+
+                resetStepCount();
+
+                startForeground(1002, notification.build());
             }
-        });
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
-        if (stepSensor != null) {
-            sensorManager.registerListener(this, stepSensor, SENSOR_DELAY);
-            stepsToday = totalSteps;
-            Log.d(TAG, "stepsToday onStart " + stepsToday);
-        } else {
-            Log.e(TAG, "onCreate: Step sensor not available");
+            if(intent.getAction() == "stopStepService"){
+                isStepServiceRunning = false;
+                stopForeground(true);
+                stopSelf();
+            }
         }
-        getStepsFromSharedPreferences();
 
-        final String CHANNELID = "Foreground Service ID 2";
-        createNotificationChannel(CHANNELID);
-        Notification.Builder notification = new Notification.Builder(this, CHANNELID)
-                .setContentText("Collecting steps..")
-                .setContentTitle("")
-                .setSmallIcon(R.drawable.icon_launcher);
-
-    resetStepCount();
-
-    startForeground(1002, notification.build());
-        return super.onStartCommand(intent, flags, startId);
+        return START_NOT_STICKY;
 }
 
     @Override
@@ -129,7 +141,7 @@ public class StepService extends Service implements SensorEventListener, Authent
         sensorManager.unregisterListener(this);
         handler.removeCallbacks(runnable);
         realmStepService.close();
-        calAidApp.removeObserver(this);
+        //calAidApp.removeObserver(this);
     }
 
     private void updateStepCount(int stepCount) {
@@ -223,17 +235,6 @@ public class StepService extends Service implements SensorEventListener, Authent
         stepsToday = savedSteps;
     }
 
-    @Override
-    public void update(SyncConfiguration syncConfiguration, User user) {
-        if (syncConfiguration == null && user == null) {
-            stopForeground(true);
-            //realmStepService.close();
-            stopSelf();
-        } else {
-            Log.d("CALAIDAPP -step service", String.valueOf(calAidApp.getSyncConfigurationMain()));
-
-        }
-    }
 
 public class StepCountBinder extends Binder {
     public StepService getService() {

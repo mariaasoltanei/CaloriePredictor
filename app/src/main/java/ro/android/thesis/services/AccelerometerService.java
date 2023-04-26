@@ -31,8 +31,9 @@ import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
 import ro.android.thesis.domain.AccelerometerData;
 
-public class AccelerometerService extends Service implements SensorEventListener, AuthenticationObserver {
+public class AccelerometerService extends Service implements SensorEventListener {
     private static final String TAG = "AccelerometerService";
+    private boolean isAccServiceRunning;
     private final ArrayList<AccelerometerData> accelerometerDataList = new ArrayList<>();
     private SensorManager sensorManager;
     private Sensor sensorAccelerometer;
@@ -50,47 +51,53 @@ public class AccelerometerService extends Service implements SensorEventListener
     public void onCreate() {
         super.onCreate();
         calAidApp = (CalAidApp) getApplicationContext();
-        calAidApp.addObserver(this);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand: Service started");
-        if(calAidApp.getSyncConfigurationMain() == null){
-            stopSelf();
-            stopForeground(true);
-        }
-        Realm.getInstanceAsync(calAidApp.getSyncConfigurationMain(), new Realm.Callback() {
-            @Override
-            public void onSuccess(Realm realm) {
-                realmAccelerometerService = realm;
-                userId = calAidApp.getAppUser().getId();
-                handler = new Handler();
-                runnable = new Runnable() {
+        if(intent != null){
+            if(intent.getAction() == "startAccService"){
+                isAccServiceRunning = true;
+                Realm.getInstanceAsync(calAidApp.getSyncConfigurationMain(), new Realm.Callback() {
                     @Override
-                    public void run() {
-                        Log.d("CALAIDAPP -Acc service", "heloooooooooooooooo");
-                        //sendDataToMongoDB();
-                        handler.postDelayed(this, 10000);
+                    public void onSuccess(Realm realm) {
+                        realmAccelerometerService = realm;
+                        userId = calAidApp.getAppUser().getId();
+                        handler = new Handler();
+                        runnable = new Runnable() {
+                            @Override
+                            public void run() {
+                                Log.d("CALAIDAPP -Acc service", "heloooooooooooooooo");
+                                //sendDataToMongoDB();
+                                handler.postDelayed(this, 10000);
+                            }
+                        };
+                        handler.postDelayed(runnable, 10000);
                     }
-                };
-                handler.postDelayed(runnable, 10000);
+                });
+                sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+                sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+                sensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+
+                final String CHANNELID = "Foreground Service ID";
+                createNotificationChannel(CHANNELID);
+                Notification.Builder notification = new Notification.Builder(this, CHANNELID)
+                        .setContentText("Collecting accelerometer data...")
+                        .setContentTitle("")
+                        .setSmallIcon(R.drawable.icon_launcher);
+
+                startForeground(1001, notification.build());
             }
-        });
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+            if(intent.getAction() == "stopAccService"){
+                isAccServiceRunning = false;
+                stopForeground(true);
+                stopSelf();
+            }
+        }
 
-        final String CHANNELID = "Foreground Service ID";
-        createNotificationChannel(CHANNELID);
-        Notification.Builder notification = new Notification.Builder(this, CHANNELID)
-                .setContentText("Collecting accelerometer data...")
-                .setContentTitle("")
-                .setSmallIcon(R.drawable.icon_launcher);
-
-        startForeground(1001, notification.build());
-        return super.onStartCommand(intent, flags, startId);
+        return START_NOT_STICKY;
     }
 
     @Override
@@ -100,7 +107,6 @@ public class AccelerometerService extends Service implements SensorEventListener
         realmAccelerometerService.close();
         sensorManager.unregisterListener(this);
         handler.removeCallbacks(runnable);
-        calAidApp.removeObserver(this);
     }
 
     @Nullable
@@ -154,14 +160,4 @@ public class AccelerometerService extends Service implements SensorEventListener
         }
     }
 
-    @Override
-    public void update(SyncConfiguration syncConfiguration, User user) {
-        if (syncConfiguration == null && user == null) {
-            stopForeground(true);
-            stopSelf();
-        } else {
-            Log.d("CALAIDAPP -Acc service", String.valueOf(calAidApp.getSyncConfigurationMain()));
-
-        }
-    }
 }
