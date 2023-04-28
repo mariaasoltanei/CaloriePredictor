@@ -79,6 +79,7 @@ public class StepService extends Service implements SensorEventListener {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand: Service started");
+        stepCountList.clear();
         if(intent != null){
             if(intent.getAction() == "startStepService"){
                 isStepServiceRunning = true;
@@ -156,8 +157,8 @@ public class StepService extends Service implements SensorEventListener {
         Log.d(TAG, "onSensorChanged: Step today: " + stepsToday);
         Calendar midnight = Calendar.getInstance();
         midnight.setTimeInMillis(System.currentTimeMillis());
-        midnight.set(Calendar.HOUR_OF_DAY, 00);
-        midnight.set(Calendar.MINUTE, 00);
+        midnight.set(Calendar.HOUR_OF_DAY, 13);
+        midnight.set(Calendar.MINUTE, 41);
         midnight.set(Calendar.SECOND, 0);
         midnight.set(Calendar.MILLISECOND, 0);
 

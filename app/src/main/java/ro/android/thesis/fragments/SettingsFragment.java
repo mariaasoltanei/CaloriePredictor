@@ -96,14 +96,23 @@ public class SettingsFragment extends Fragment implements AuthenticationObserver
                     Log.d("CALAIDAPP", String.valueOf(calAidApp.getSyncConfigurationMain()));
                     calAidApp.setSyncConfigurationMain(null);
                     Log.d("CALAIDAPP", String.valueOf(calAidApp.getSyncConfigurationMain()));
-                    getActivity().getApplicationContext().unbindService(serviceConnection);
+
                     Intent stopAccServiceIntent = new Intent(this.getActivity().getApplicationContext(), AccelerometerService.class);
                     stopAccServiceIntent.setAction("stopAccService");
                     this.getActivity().getApplicationContext().stopService(stopAccServiceIntent);
 
-                    Intent stopStepService = new Intent(this.getActivity().getApplicationContext(), StepService.class);
-                    stopStepService.setAction("stopStepService");
-                    this.getActivity().getApplicationContext().stopService(stopStepService);
+                    if(stepServiceViewModel.isServiceBound() && stepServiceViewModel.getStepServiceConnection() != null){
+
+                        Log.d("CALAIDAPP-SERVICE CONN", stepServiceViewModel.getStepServiceConnection().toString());
+                        getContext().unbindService(serviceConnection);
+                        stepServiceViewModel.setServiceBound(false);
+                        stepServiceViewModel.setStepServiceConnection(null);
+                        Intent stopStepService = new Intent(this.getActivity().getApplicationContext(), StepService.class);
+                        stopStepService.setAction("stopStepService");
+                        this.getActivity().getApplicationContext().stopService(stopStepService);
+                    }
+
+
                     if(calAidApp.getAppUser() != null){
                         calAidApp.setAppUser(null);
                         //Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));

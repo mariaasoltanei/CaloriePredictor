@@ -57,6 +57,7 @@ public class AccelerometerService extends Service implements SensorEventListener
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand: Service started");
+        accelerometerDataList.clear();
         if(intent != null){
             if(intent.getAction() == "startAccService"){
                 isAccServiceRunning = true;
@@ -69,7 +70,7 @@ public class AccelerometerService extends Service implements SensorEventListener
                         runnable = new Runnable() {
                             @Override
                             public void run() {
-                                Log.d("CALAIDAPP -Acc service", "heloooooooooooooooo");
+                                Log.d("CALAIDAPP -Acc service", "acc");
                                 //sendDataToMongoDB();
                                 handler.postDelayed(this, 10000);
                             }
@@ -78,7 +79,8 @@ public class AccelerometerService extends Service implements SensorEventListener
                     }
                 });
                 sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-                sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+                //TODO: VEX
+                sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
                 sensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
 
                 final String CHANNELID = "Foreground Service ID";

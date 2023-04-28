@@ -113,17 +113,19 @@ public class DashboardFragment extends Fragment {
                 int stepCount = service.getStepCount();
                 Log.d("STEP COUNTER", "DashboardFragment/" + stepCount);
                 countSteps.setText(String.valueOf(stepCount));
+                stepServiceViewModel.setServiceBound(true);
             }
 
             @Override
             public void onServiceDisconnected(ComponentName componentName) {
                 binder = null;
+                stepServiceViewModel.setServiceBound(false);
             }
         };
         stepServiceViewModel.setStepServiceConnection(serviceConnection);
 
         Intent serviceIntent = new Intent(getActivity(), StepService.class);
-        this.getActivity().bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+        getActivity().bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
         requestPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION);
         loadSharePrefsData();
         return rootView;

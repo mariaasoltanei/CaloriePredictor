@@ -86,8 +86,8 @@ public class ProfileFragment extends Fragment {
             public void run() {
                 realm = Realm.getInstance(syncConfiguration);
                 final User user = realm.where(User.class).equalTo("email", getUserEmail()).findFirst();
-                RealmResults<AccelerometerData> results = realm.where(AccelerometerData.class).findAll();
-                realm.executeTransaction(realm -> results.deleteAllFromRealm());
+//                RealmResults<AccelerometerData> results = realm.where(AccelerometerData.class).findAll();
+//                realm.executeTransaction(realm -> results.deleteAllFromRealm());
                 RealmResults<StepCount> resultsSteps = realm.where(StepCount.class).findAll();
                 realm.executeTransaction(realm -> resultsSteps.deleteAllFromRealm());
                 userCopy = realm.copyFromRealm(user);

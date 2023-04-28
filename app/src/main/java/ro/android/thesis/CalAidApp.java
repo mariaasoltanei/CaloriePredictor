@@ -9,6 +9,7 @@ import android.util.Log;
 import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -121,6 +122,8 @@ public class CalAidApp extends Application {
             isAccServiceRunning = false;
             isStepServiceRunning = false;
         }
+        Calendar calendar = Calendar.getInstance();
+        Log.d("CALAID" , String.valueOf(calendar.get(Calendar.HOUR_OF_DAY)));
     }
 
     public SyncConfiguration getSyncConfigurationMain() {
