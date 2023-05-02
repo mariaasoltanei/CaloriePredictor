@@ -101,6 +101,11 @@ public class CalAidApp extends Application {
                             e.printStackTrace();
                         }
                     }
+
+                    @Override
+                    public void onManualResetFallback(SyncSession session, ClientResetRequiredError error) {
+
+                    }
                 })
                 .build());
 

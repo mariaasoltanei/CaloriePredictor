@@ -19,11 +19,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -32,9 +34,18 @@ import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import ro.android.thesis.AuthenticationObserver;
+import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
 import ro.android.thesis.StepServiceViewModel;
 import ro.android.thesis.broadcasts.StepCountReceiver;
@@ -57,8 +68,15 @@ public class DashboardFragment extends Fragment {
     TextView countSteps;
     TextView userName;
     TextView percentageGoal;
+    TextView tvNumCalories;
     CircularProgressIndicator circularProgressIndicator;
     StepService.StepCountBinder binder;
+
+    private String url = "http://192.168.0.106:5000/calories/"; //+ CalAidApp.getApp().currentUser().getId();
+    private String postBodyString;
+    private MediaType mediaType;
+    private RequestBody requestBody;
+    private Button connect;
 
     public StepCountReceiver getStepCountReceiver() {
         return stepCountReceiver;
@@ -86,6 +104,7 @@ public class DashboardFragment extends Fragment {
             }
         });
 
+
     }
 
     @Override
@@ -104,7 +123,15 @@ public class DashboardFragment extends Fragment {
         circularProgressIndicator = rootView.findViewById(R.id.progressBarSteps);
         percentageGoal = rootView.findViewById(R.id.tvPercentageGoal);
         circularProgressIndicator.setMax(100);
+        tvNumCalories = rootView.findViewById(R.id.tvNumCalories);
+        connect = rootView.findViewById(R.id.btnTestRequest);
+        connect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                postRequest("hello world", url);
 
+            }
+        });
         serviceConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
@@ -161,6 +188,48 @@ public class DashboardFragment extends Fragment {
         super.onDestroy();
         Log.d(TAG, "onDestroy");
 
+    }
+
+    private RequestBody buildRequestBody(String msg) {
+        postBodyString = msg;
+        mediaType = MediaType.parse("text/plain");
+        requestBody = RequestBody.create(postBodyString, mediaType);
+        return requestBody;
+    }
+    private void postRequest(String message, String URL) {
+        RequestBody requestBody = buildRequestBody(message);
+        OkHttpClient okHttpClient = new OkHttpClient();
+        Request request = new Request
+                .Builder()
+                .get()
+                .url(URL)
+                .build();
+        okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.e("OkHTTTP", e.getMessage());
+                        call.cancel();
+                    }
+                }).start();
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Log.d("OkHTTTP", response.body().string());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }).start();
+            }
+        });
     }
 
     public boolean stepSensorsAvailable() {

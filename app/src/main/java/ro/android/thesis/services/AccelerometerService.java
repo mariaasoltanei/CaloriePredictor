@@ -79,7 +79,7 @@ public class AccelerometerService extends Service implements SensorEventListener
                     }
                 });
                 sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-                //TODO: VEX
+
                 sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
                 sensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
 

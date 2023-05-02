@@ -198,6 +198,7 @@ public class HealthInfoFragment extends Fragment implements AuthenticationObserv
                                                 .build();
                                         calAidApp.setSyncConfigurationMain(syncConfiguration);
                                         insertRealm =  Realm.getInstance(syncConfiguration);
+                                        user.setMongoUserId(CalAidApp.getApp().currentUser().getId());
                                         insertRealm.executeTransaction(new Realm.Transaction() {
                                             @Override
                                             public void execute(Realm realm) {

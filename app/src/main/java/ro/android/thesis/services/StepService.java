@@ -72,6 +72,16 @@ public class StepService extends Service implements SensorEventListener {
         super.onCreate();
         calAidApp = (CalAidApp) getApplicationContext();
        // calAidApp.addObserver(this);
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+        if (stepSensor != null) {
+            sensorManager.registerListener(this, stepSensor, SENSOR_DELAY);
+            stepsToday = totalSteps;
+            Log.d(TAG, "stepsToday onStart " + stepsToday);
+        } else {
+            Log.e(TAG, "onCreate: Step sensor not available");
+        }
+        getStepsFromSharedPreferences();
         Log.d(TAG, "TOTAL STEPS " + totalSteps);
     }
 
@@ -101,25 +111,14 @@ public class StepService extends Service implements SensorEventListener {
                         handler.postDelayed(runnable, 10000);
                     }
                 });
-                sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-                stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
-                if (stepSensor != null) {
-                    sensorManager.registerListener(this, stepSensor, SENSOR_DELAY);
-                    stepsToday = totalSteps;
-                    Log.d(TAG, "stepsToday onStart " + stepsToday);
-                } else {
-                    Log.e(TAG, "onCreate: Step sensor not available");
-                }
-                getStepsFromSharedPreferences();
 
+                resetStepCount();
                 final String CHANNELID = "Foreground Service ID 2";
                 createNotificationChannel(CHANNELID);
                 Notification.Builder notification = new Notification.Builder(this, CHANNELID)
                         .setContentText("Collecting steps..")
                         .setContentTitle("")
                         .setSmallIcon(R.drawable.icon_launcher);
-
-                resetStepCount();
 
                 startForeground(1002, notification.build());
             }
@@ -158,7 +157,7 @@ public class StepService extends Service implements SensorEventListener {
         Calendar midnight = Calendar.getInstance();
         midnight.setTimeInMillis(System.currentTimeMillis());
         midnight.set(Calendar.HOUR_OF_DAY, 13);
-        midnight.set(Calendar.MINUTE, 41);
+        midnight.set(Calendar.MINUTE, 56);
         midnight.set(Calendar.SECOND, 0);
         midnight.set(Calendar.MILLISECOND, 0);
 

@@ -20,6 +20,7 @@ public class User extends RealmObject {
     private double weight;
     private String gender;
     private double activityMultiplier;
+    private String mongoUserId;
 
     public User() {
     }
@@ -45,6 +46,19 @@ public class User extends RealmObject {
         this.weight = weight;
         this.gender = gender;
         this.activityMultiplier = activityMultiplier;
+    }
+
+    public User(ObjectId _id, String firstName, String email, String password, String birthDate, double height, double weight, String gender, double activityMultiplier, String mongoUserId) {
+        this._id = _id;
+        this.firstName = firstName;
+        this.email = email;
+        this.password = password;
+        this.birthDate = birthDate;
+        this.height = height;
+        this.weight = weight;
+        this.gender = gender;
+        this.activityMultiplier = activityMultiplier;
+        this.mongoUserId = mongoUserId;
     }
 
     @Override
@@ -121,6 +135,14 @@ public class User extends RealmObject {
 
     public double getActivityMultiplier() {
         return activityMultiplier;
+    }
+
+    public String getMongoUserId() {
+        return mongoUserId;
+    }
+
+    public void setMongoUserId(String mongoUserId) {
+        this.mongoUserId = mongoUserId;
     }
 
     public void setActivityMultiplier(double activityMultiplier) {

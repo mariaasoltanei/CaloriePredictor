@@ -9,8 +9,6 @@ import androidx.fragment.app.FragmentTransaction;
 import ro.android.thesis.fragments.PersonalInfoFragment;
 
 public class SignUpActivity extends AppCompatActivity {
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
