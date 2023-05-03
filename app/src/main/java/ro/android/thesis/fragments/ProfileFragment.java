@@ -78,7 +78,7 @@ public class ProfileFragment extends Fragment {
         btnSaveUpdate = rootView.findViewById(R.id.btnSaveUpdate);
         btnUpdatePassword = rootView.findViewById(R.id.btnUpdatePassword);
         KeyboardUtils.setupUI(rootView, this.getActivity());
-
+//TODO: user should be able to edit activity multiplier
         loadingDialog.setCancelable(false);
         loadingDialog.show(getChildFragmentManager(), "loading_screen");
         new Thread(new Runnable() {

@@ -30,6 +30,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    namespace 'ro.android.thesis'
 }
 realm {
     syncEnabled = true
@@ -50,5 +51,6 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.0"))
 
 }

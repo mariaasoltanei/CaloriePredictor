@@ -1,6 +1,11 @@
 package ro.android.thesis.fragments;
 
+import static android.content.Context.ALARM_SERVICE;
+
+
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -34,8 +39,13 @@ import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.Calendar;
+import java.util.Date;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -48,6 +58,7 @@ import ro.android.thesis.AuthenticationObserver;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
 import ro.android.thesis.StepServiceViewModel;
+import ro.android.thesis.broadcasts.NotificationReceiver;
 import ro.android.thesis.broadcasts.StepCountReceiver;
 import ro.android.thesis.domain.User;
 import ro.android.thesis.services.StepService;
@@ -72,7 +83,7 @@ public class DashboardFragment extends Fragment {
     CircularProgressIndicator circularProgressIndicator;
     StepService.StepCountBinder binder;
 
-    private String url = "http://192.168.0.106:5000/calories/"; //+ CalAidApp.getApp().currentUser().getId();
+    private String url = "http://192.168.0.100:5000/calories/" + CalAidApp.getApp().currentUser().getId();
     private String postBodyString;
     private MediaType mediaType;
     private RequestBody requestBody;
@@ -93,6 +104,7 @@ public class DashboardFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
+
         //setRetainInstance(true);
         requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
             if (isGranted) {
@@ -123,6 +135,7 @@ public class DashboardFragment extends Fragment {
         circularProgressIndicator = rootView.findViewById(R.id.progressBarSteps);
         percentageGoal = rootView.findViewById(R.id.tvPercentageGoal);
         circularProgressIndicator.setMax(100);
+        //TODO: calculate target Calories
         tvNumCalories = rootView.findViewById(R.id.tvNumCalories);
         connect = rootView.findViewById(R.id.btnTestRequest);
         connect.setOnClickListener(new View.OnClickListener() {
@@ -140,6 +153,18 @@ public class DashboardFragment extends Fragment {
                 int stepCount = service.getStepCount();
                 Log.d("STEP COUNTER", "DashboardFragment/" + stepCount);
                 countSteps.setText(String.valueOf(stepCount));
+                if(stepCount == 100){
+                    sendNotification("Congrats! First 100 steps.");
+                }
+                if(stepCount == 1000 || stepCount == 5000 || stepCount == 8000){
+                    String notificationText = "Keep up the good work! You have reached " + stepCount + "steps.";
+                    sendNotification(notificationText);
+                }
+                Calendar calendar = Calendar.getInstance();
+                int hourOfDay = calendar.get(Calendar.HOUR_OF_DAY);
+                if(stepCount < 100 && hourOfDay == 15){
+                    sendNotification("Time for some exercise!");
+                }
                 stepServiceViewModel.setServiceBound(true);
             }
 
@@ -154,7 +179,9 @@ public class DashboardFragment extends Fragment {
         Intent serviceIntent = new Intent(getActivity(), StepService.class);
         getActivity().bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
         requestPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION);
+        //sendNotification();
         loadSharePrefsData();
+        tvNumCalories.setText(String.valueOf(calculateCalories()));
         return rootView;
     }
 
@@ -222,8 +249,19 @@ public class DashboardFragment extends Fragment {
                     @Override
                     public void run() {
                         try {
-                            Log.d("OkHTTTP", response.body().string());
+                            //Log.d("OkHTTTP", response.body().string());
+                            JSONObject jsonObject = new JSONObject(response.body().string());
+                            double variable1 = jsonObject.getDouble("calories");
+                            double variable2 = jsonObject.getDouble("speed");
+                            double variable3 = jsonObject.getDouble("activityDurationMins");
+                            Log.d("OkHTTTP", String.valueOf(variable1));
+                            Log.d("OkHTTTP", String.valueOf(variable2));
+                            Log.d("OkHTTTP", String.valueOf(variable3));
+
+
                         } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        } catch (JSONException e) {
                             throw new RuntimeException(e);
                         }
                     }
@@ -271,6 +309,16 @@ public class DashboardFragment extends Fragment {
         return (double) (noSteps * 0.01);
 
     }
+    private void sendNotification(String content){
+        Log.d("CALAID", "Notification function");
+        AlarmManager alarmManager = (AlarmManager) getActivity().getSystemService(ALARM_SERVICE);
+        Intent intent = new Intent(getActivity(), NotificationReceiver.class);
+        intent.putExtra("content", content);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity().getApplicationContext(), 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() +100, AlarmManager.INTERVAL_DAY, pendingIntent);
+        }
+    }
 
     public void startProgressBarThread() {
         countSteps.addTextChangedListener(new TextWatcher() {
@@ -308,6 +356,28 @@ public class DashboardFragment extends Fragment {
             }
         });
 
+    }
+    private int calculateCalories() {
+        SharedPreferences sharedPref = this.getContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
+        String userLogged = sharedPref.getString("user", null);
+        Gson gson = new Gson();
+        Type type = new TypeToken<User>() {
+        }.getType();
+        User user = gson.fromJson(userLogged, type);
+        //TODO: find age difference with the full date
+        Calendar calendar = Calendar.getInstance();
+        int age = calendar.get(Calendar.YEAR) - Integer.parseInt(user.getBirthDate().substring(user.getBirthDate().length() - 4));
+        Log.d("SHARED PREFS TESTAGE", user.getBirthDate().substring(user.getBirthDate().length() - 4));
+        Log.d("SHARED PREFS TESTAGE", String.valueOf(age));
+        double bmr = 0;
+        if(user.getGender() == "Female"){
+            bmr = 10 * user.getWeight() + 6.25 * user.getHeight() - 5 * age + 161;
+            Log.d("SHARED PREFS TESTAGE", String.valueOf(bmr));
+        }
+        else {
+            bmr = 10 * user.getWeight() + 6.25 * user.getHeight() - 5 * age + 5;
+        }
+        return (int) (bmr * user.getActivityMultiplier());
     }
     public void unregisterReceiver() {
         getActivity().unregisterReceiver(stepCountReceiver);

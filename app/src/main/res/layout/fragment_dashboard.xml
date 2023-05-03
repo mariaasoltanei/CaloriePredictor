@@ -120,6 +120,70 @@
         android:layout_margin="16dp"
         android:background="@drawable/bg_widget_dashboard"
         android:padding="16dp">
+        <TextView
+            android:id="@+id/tvTitleCalories"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Calories"
+            android:textSize="22dp"
+            android:fontFamily="@font/roboto_black"
+            android:textColor="@color/black"
+            android:textAlignment="viewStart"
+            />
+        <TextView
+            android:id="@+id/tvTitleSpeed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Speed"
+            android:textSize="22dp"
+            android:fontFamily="@font/roboto_black"
+            android:textColor="@color/black"
+            android:layout_centerHorizontal="true"
+            />
+        <TextView
+            android:id="@+id/tvTitleDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Duration"
+            android:textSize="22dp"
+            android:fontFamily="@font/roboto_black"
+            android:textColor="@color/black"
+            android:layout_alignParentEnd="true"
+            />
+
+        <TextView
+            android:id="@+id/tvCaloriesConsumed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Calories"
+            android:textSize="20dp"
+            android:fontFamily="@font/nunito"
+            android:textColor="@color/black"
+            android:textAlignment="viewStart"
+            android:layout_below="@id/tvTitleCalories"
+            />
+        <TextView
+            android:id="@+id/tvSpeed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Speed"
+            android:textSize="20dp"
+            android:fontFamily="@font/nunito"
+            android:textColor="@color/black"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/tvTitleSpeed"
+            />
+        <TextView
+            android:id="@+id/tvDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Duration"
+            android:textSize="20dp"
+            android:fontFamily="@font/nunito"
+            android:textColor="@color/black"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@id/tvTitleDuration"
+            />
         <Button
             android:id="@+id/btnTestRequest"
             android:layout_width="match_parent"
@@ -130,10 +194,12 @@
             android:layout_marginStart="22dp"
             android:layout_marginEnd="22dp"
             android:layout_marginTop="24dp"
-            android:text="Request"
+            android:text="Start"
             android:textColor="@color/black"
             android:textSize="22dp"
             android:textAllCaps="false"
+
+            android:layout_below="@id/tvSpeed"
             style="@style/btn_style" />
     </RelativeLayout>
 

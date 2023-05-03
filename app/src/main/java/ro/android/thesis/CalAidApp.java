@@ -8,8 +8,10 @@ import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -128,6 +130,9 @@ public class CalAidApp extends Application {
             isStepServiceRunning = false;
         }
         Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
+        Date date = new Date(System.currentTimeMillis());
+        Log.d("CALAID", formatter.format(date));
         Log.d("CALAID" , String.valueOf(calendar.get(Calendar.HOUR_OF_DAY)));
     }
 
