@@ -18,6 +18,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -67,7 +68,10 @@ import ro.android.thesis.services.StepService;
 public class DashboardFragment extends Fragment {
     private final String TAG = "DashboardFragment";
     User user;
-
+    private boolean isThreadRunning = false;
+    private Handler handler;
+    private Handler requestHandler;
+    private Runnable runnable;
     private StepServiceViewModel stepServiceViewModel;
     public StepCountReceiver stepCountReceiver;
     ServiceConnection serviceConnection;
@@ -80,6 +84,9 @@ public class DashboardFragment extends Fragment {
     TextView userName;
     TextView percentageGoal;
     TextView tvNumCalories;
+    TextView tvCaloriesConsumed;
+    TextView tvSpeed;
+    TextView tvDuration;
     CircularProgressIndicator circularProgressIndicator;
     StepService.StepCountBinder binder;
 
@@ -105,7 +112,6 @@ public class DashboardFragment extends Fragment {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
 
-        //setRetainInstance(true);
         requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
             if (isGranted) {
                 // Permission is granted
@@ -137,12 +143,22 @@ public class DashboardFragment extends Fragment {
         circularProgressIndicator.setMax(100);
         //TODO: calculate target Calories
         tvNumCalories = rootView.findViewById(R.id.tvNumCalories);
+        tvCaloriesConsumed = rootView.findViewById(R.id.tvCaloriesConsumed);
+        tvSpeed = rootView.findViewById(R.id.tvSpeed);
+        tvDuration = rootView.findViewById(R.id.tvDuration);
         connect = rootView.findViewById(R.id.btnTestRequest);
         connect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                postRequest("hello world", url);
-
+//                getRequest(url);
+                if (!isThreadRunning) {
+                    startThread();
+                    connect.setText("End");
+                }
+                else {
+                    stopThread();
+                    connect.setText("Start");
+                }
             }
         });
         serviceConnection = new ServiceConnection() {
@@ -223,8 +239,7 @@ public class DashboardFragment extends Fragment {
         requestBody = RequestBody.create(postBodyString, mediaType);
         return requestBody;
     }
-    private void postRequest(String message, String URL) {
-        RequestBody requestBody = buildRequestBody(message);
+    private void getRequest(String URL) {
         OkHttpClient okHttpClient = new OkHttpClient();
         Request request = new Request
                 .Builder()
@@ -245,25 +260,45 @@ public class DashboardFragment extends Fragment {
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                requestHandler = new Handler(Looper.getMainLooper());
+
                 new Thread(new Runnable() {
+                    double calories;
+                    double speed;
+                    double duration;
+                    private long startTime = 0;
+                    String timeString;
                     @Override
                     public void run() {
                         try {
                             //Log.d("OkHTTTP", response.body().string());
+                            startTime = System.currentTimeMillis();
+                            long elapsedTime = System.currentTimeMillis() - startTime;
+                            int seconds = (int) (elapsedTime / 1000) % 60;
+                            int minutes = (int) ((elapsedTime / (1000*60)) % 60);
+                            timeString = String.format("%02d:%02d", minutes, seconds);
+                            Log.d(TAG, "Timer running: " + timeString);
                             JSONObject jsonObject = new JSONObject(response.body().string());
-                            double variable1 = jsonObject.getDouble("calories");
-                            double variable2 = jsonObject.getDouble("speed");
-                            double variable3 = jsonObject.getDouble("activityDurationMins");
-                            Log.d("OkHTTTP", String.valueOf(variable1));
-                            Log.d("OkHTTTP", String.valueOf(variable2));
-                            Log.d("OkHTTTP", String.valueOf(variable3));
+                            calories = jsonObject.getDouble("calories");
+                            speed = jsonObject.getDouble("speed");
+                            duration = jsonObject.getDouble("activityDurationMins");
 
-
+                            Log.d("OkHTTTP", String.valueOf(calories));
+                            Log.d("OkHTTTP", String.valueOf(speed));
+                            Log.d("OkHTTTP", String.valueOf(duration));
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         } catch (JSONException e) {
                             throw new RuntimeException(e);
                         }
+                        requestHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                tvCaloriesConsumed.setText(String.valueOf(calories));
+                                tvSpeed.setText(String.format("%,.2f", speed));
+                                tvDuration.setText(String.valueOf(timeString));
+                            }
+                        });
                     }
                 }).start();
             }
@@ -378,6 +413,30 @@ public class DashboardFragment extends Fragment {
             bmr = 10 * user.getWeight() + 6.25 * user.getHeight() - 5 * age + 5;
         }
         return (int) (bmr * user.getActivityMultiplier());
+    }
+    private void startThread() {
+        if (!isThreadRunning) {
+            isThreadRunning = true;
+            handler = new Handler(Looper.getMainLooper());
+            runnable = new Runnable() {
+                @Override
+                public void run() {
+                    getRequest(url);
+                    Toast.makeText(getActivity(), "Thread running", Toast.LENGTH_SHORT).show();
+                    if (isThreadRunning) {
+                        handler.postDelayed(this, 1000);
+                    }
+                }
+            };
+            handler.postDelayed(runnable, 1000);
+        }
+    }
+
+    private void stopThread() {
+        if (isThreadRunning) {
+            isThreadRunning = false;
+            handler.removeCallbacks(runnable);
+        }
     }
     public void unregisterReceiver() {
         getActivity().unregisterReceiver(stepCountReceiver);
