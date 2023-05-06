@@ -76,12 +76,12 @@ public class StepService extends Service implements SensorEventListener {
         stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         if (stepSensor != null) {
             sensorManager.registerListener(this, stepSensor, SENSOR_DELAY);
-            stepsToday = totalSteps;
+            stepsToday = getStepsFromSharedPreferences();
             Log.d(TAG, "stepsToday onStart " + stepsToday);
         } else {
             Log.e(TAG, "onCreate: Step sensor not available");
         }
-        getStepsFromSharedPreferences();
+
         Log.d(TAG, "TOTAL STEPS " + totalSteps);
     }
 
@@ -103,12 +103,11 @@ public class StepService extends Service implements SensorEventListener {
                             @Override
                             public void run() {
                                 Log.d("CALAIDAPP -Step service", "steps");
-                                //sendStepsToMongoDB();
-
-                                handler.postDelayed(this, 10000);
+                               // sendStepsToMongoDB();
+                                handler.postDelayed(this, 5000);
                             }
                         };
-                        handler.postDelayed(runnable, 10000);
+                        handler.postDelayed(runnable, 5000);
                     }
                 });
 
@@ -228,11 +227,11 @@ public class StepService extends Service implements SensorEventListener {
         editor.apply();
     }
 
-    private void getStepsFromSharedPreferences() {
+    private int getStepsFromSharedPreferences() {
         SharedPreferences sharedPref = this.getSharedPreferences("stepCount", Context.MODE_PRIVATE);
         int savedSteps = sharedPref.getInt("numSteps", 0);
         Log.d(TAG, String.valueOf(savedSteps));
-        stepsToday = savedSteps;
+        return savedSteps;
     }
 
 

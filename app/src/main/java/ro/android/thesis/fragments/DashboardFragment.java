@@ -45,6 +45,8 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -55,6 +57,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okio.Buffer;
 import ro.android.thesis.AuthenticationObserver;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
@@ -67,10 +70,40 @@ import ro.android.thesis.services.StepService;
 
 public class DashboardFragment extends Fragment {
     private final String TAG = "DashboardFragment";
+    private double calories;
+    private double speed;
+    private long startTime = 0;
+    private int noStepsStart;
+    private double totalNumberCalories = 0;
     User user;
+
+    public int getNoSteps() {
+        return noStepsStart;
+    }
+
+    public void setNoSteps(int noStepsStart) {
+        this.noStepsStart = noStepsStart;
+    }
+
+    public double getCalories() {
+        return calories;
+    }
+
+    public void setCalories(double calories) {
+        this.calories = calories;
+    }
+
+    public double getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(double speed) {
+        this.speed = speed;
+    }
+
     private boolean isThreadRunning = false;
     private Handler handler;
-    private Handler requestHandler;
+    private Handler timerHandler;
     private Runnable runnable;
     private StepServiceViewModel stepServiceViewModel;
     public StepCountReceiver stepCountReceiver;
@@ -90,7 +123,8 @@ public class DashboardFragment extends Fragment {
     CircularProgressIndicator circularProgressIndicator;
     StepService.StepCountBinder binder;
 
-    private String url = "http://192.168.0.100:5000/calories/" + CalAidApp.getApp().currentUser().getId();
+    //TODO: add wait time
+    private String url = "http://172.20.10.3:5000/calories/" + CalAidApp.getApp().currentUser().getId();
     private String postBodyString;
     private MediaType mediaType;
     private RequestBody requestBody;
@@ -169,8 +203,9 @@ public class DashboardFragment extends Fragment {
                 int stepCount = service.getStepCount();
                 Log.d("STEP COUNTER", "DashboardFragment/" + stepCount);
                 countSteps.setText(String.valueOf(stepCount));
+                setNoSteps(stepCount);
                 if(stepCount == 100){
-                    sendNotification("Congrats! First 100 steps.");
+                    sendNotification("Congrats on your step progress.");
                 }
                 if(stepCount == 1000 || stepCount == 5000 || stepCount == 8000){
                     String notificationText = "Keep up the good work! You have reached " + stepCount + "steps.";
@@ -178,7 +213,8 @@ public class DashboardFragment extends Fragment {
                 }
                 Calendar calendar = Calendar.getInstance();
                 int hourOfDay = calendar.get(Calendar.HOUR_OF_DAY);
-                if(stepCount < 100 && hourOfDay == 15){
+                int minutesOfDay = calendar.get(Calendar.MINUTE);
+                if(stepCount < 100 && hourOfDay == 16 && minutesOfDay == 05){
                     sendNotification("Time for some exercise!");
                 }
                 stepServiceViewModel.setServiceBound(true);
@@ -222,6 +258,8 @@ public class DashboardFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         Log.d(TAG, "onDestroyView");
+//        handler.removeCallbacks(runnable);
+//        timerHandler.removeCallbacks(runnable);
         //getActivity().unregisterReceiver(stepCountReceiver);
 //        resetNumStepsHandler.removeCallbacks(resetNumStepsRunnable);
     }
@@ -230,14 +268,78 @@ public class DashboardFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy");
+//        handler.removeCallbacks(runnable);
+//        timerHandler.removeCallbacks(runnable);
 
     }
 
-    private RequestBody buildRequestBody(String msg) {
-        postBodyString = msg;
-        mediaType = MediaType.parse("text/plain");
-        requestBody = RequestBody.create(postBodyString, mediaType);
+//    private RequestBody buildRequestBody(String msg) {
+//        postBodyString = msg;
+//        mediaType = MediaType.parse("application/json; charset=utf-8");
+//        requestBody = RequestBody.create(jsonObject.toString(), mediaType);
+//        return requestBody;
+//    }
+    private RequestBody buildRequestBody(JSONObject jsonObject) {
+        String jsonStr = jsonObject.toString();
+        MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
+        RequestBody requestBody = RequestBody.create(jsonStr, mediaType);
         return requestBody;
+    }
+    private void postRequest(String URL){
+        try{
+            JSONObject jsonObject = new JSONObject();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSS");
+            Date currentDate = new Date();
+            String currentDateString = dateFormat.format(currentDate);
+            jsonObject.put("timestamp", currentDateString);
+            RequestBody requestBody = buildRequestBody(jsonObject);
+            OkHttpClient okHttpClient = new OkHttpClient();
+            Request request = new Request
+                    .Builder()
+                    .post(requestBody)
+                    .url(URL)
+                    .build();
+
+            Log.d("OkHTTTP-req", requestBody.toString());
+            okHttpClient.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.e("OkHTTTP", e.getMessage());
+                            call.cancel();
+                        }
+                    }).start();
+                }
+
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                try {
+//                    Log.d("OkHTTTP-resp", response.body().string());
+                    JSONObject jsonObject = new JSONObject(response.body().string());
+                    calories = jsonObject.getDouble("calories");
+                    speed = jsonObject.getDouble("speed");
+                    //duration = jsonObject.getDouble("activityDurationMins");
+                    setCalories(calories);
+                    setSpeed(speed);
+
+                    Log.d("OkHTTTPpost", String.valueOf(calories));
+                    Log.d("OkHTTTPpost", String.valueOf(speed));
+                    //Log.d("OkHTTTP", String.valueOf(duration));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+                }
+            });
+        }
+        catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+
     }
     private void getRequest(String URL) {
         OkHttpClient okHttpClient = new OkHttpClient();
@@ -260,47 +362,23 @@ public class DashboardFragment extends Fragment {
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                requestHandler = new Handler(Looper.getMainLooper());
+                try {
+                    //Log.d("OkHTTTP", response.body().string());
+                    JSONObject jsonObject = new JSONObject(response.body().string());
+                    calories = jsonObject.getDouble("calories");
+                    speed = jsonObject.getDouble("speed");
+                    //duration = jsonObject.getDouble("activityDurationMins");
+                    setCalories(calories);
+                    setSpeed(speed);
 
-                new Thread(new Runnable() {
-                    double calories;
-                    double speed;
-                    double duration;
-                    private long startTime = 0;
-                    String timeString;
-                    @Override
-                    public void run() {
-                        try {
-                            //Log.d("OkHTTTP", response.body().string());
-                            startTime = System.currentTimeMillis();
-                            long elapsedTime = System.currentTimeMillis() - startTime;
-                            int seconds = (int) (elapsedTime / 1000) % 60;
-                            int minutes = (int) ((elapsedTime / (1000*60)) % 60);
-                            timeString = String.format("%02d:%02d", minutes, seconds);
-                            Log.d(TAG, "Timer running: " + timeString);
-                            JSONObject jsonObject = new JSONObject(response.body().string());
-                            calories = jsonObject.getDouble("calories");
-                            speed = jsonObject.getDouble("speed");
-                            duration = jsonObject.getDouble("activityDurationMins");
-
-                            Log.d("OkHTTTP", String.valueOf(calories));
-                            Log.d("OkHTTTP", String.valueOf(speed));
-                            Log.d("OkHTTTP", String.valueOf(duration));
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        } catch (JSONException e) {
-                            throw new RuntimeException(e);
-                        }
-                        requestHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                tvCaloriesConsumed.setText(String.valueOf(calories));
-                                tvSpeed.setText(String.format("%,.2f", speed));
-                                tvDuration.setText(String.valueOf(timeString));
-                            }
-                        });
-                    }
-                }).start();
+                    Log.d("OkHTTTP", String.valueOf(calories));
+                    Log.d("OkHTTTP", String.valueOf(speed));
+                    //Log.d("OkHTTTP", String.valueOf(duration));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
     }
@@ -358,10 +436,7 @@ public class DashboardFragment extends Fragment {
     public void startProgressBarThread() {
         countSteps.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 progressBarbHandler.postDelayed(new Runnable() {
@@ -417,25 +492,43 @@ public class DashboardFragment extends Fragment {
     private void startThread() {
         if (!isThreadRunning) {
             isThreadRunning = true;
+            startTime = System.currentTimeMillis();
             handler = new Handler(Looper.getMainLooper());
+            timerHandler = new Handler(Looper.getMainLooper());
             runnable = new Runnable() {
                 @Override
                 public void run() {
-                    getRequest(url);
-                    Toast.makeText(getActivity(), "Thread running", Toast.LENGTH_SHORT).show();
                     if (isThreadRunning) {
-                        handler.postDelayed(this, 1000);
+                        postRequest(url);
+                        //timerHandler.postDelayed(this, 1000);
+                        handler.postDelayed(this, 5000);
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                long elapsedTime = System.currentTimeMillis() - startTime;
+                                int seconds = (int) (elapsedTime / 1000) % 60;
+                                int minutes = (int) ((elapsedTime / (1000*60)) % 60);
+                                String timeString = String.format("%02d:%02d", minutes, seconds);
+                                tvDuration.setText(String.valueOf(timeString));
+                                totalNumberCalories += calories;
+                                tvCaloriesConsumed.setText(String.format("%,.2f",totalNumberCalories));
+                                tvSpeed.setText(String.format("%,.2f", speed));
+                            }
+                        });
                     }
                 }
             };
-            handler.postDelayed(runnable, 1000);
+            handler.postDelayed(runnable, 5000);
+            //timerHandler.postDelayed(runnable, 1000);
         }
     }
 
     private void stopThread() {
         if (isThreadRunning) {
+            totalNumberCalories = 0;
             isThreadRunning = false;
             handler.removeCallbacks(runnable);
+            timerHandler.removeCallbacks(runnable);
         }
     }
     public void unregisterReceiver() {
