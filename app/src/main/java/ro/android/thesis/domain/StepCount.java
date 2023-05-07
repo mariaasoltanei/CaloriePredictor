@@ -35,4 +35,12 @@ public class StepCount extends RealmObject {
     public void setNoSteps(long noSteps) {
         this.noSteps = noSteps;
     }
+
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
+    public long getNoSteps() {
+        return noSteps;
+    }
 }

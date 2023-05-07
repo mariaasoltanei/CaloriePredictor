@@ -41,6 +41,8 @@ public class AccelerometerService extends Service implements SensorEventListener
     private Realm realmAccelerometerService;
     private Handler handler;
     private Runnable runnable;
+    private Handler speedHandler;
+    private Runnable speedRunnable;
     private CalAidApp calAidApp;
 
     private SyncConfiguration syncConfiguration;
@@ -82,6 +84,7 @@ public class AccelerometerService extends Service implements SensorEventListener
 
                 sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
                 sensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+
 
                 final String CHANNELID = "Foreground Service ID";
                 createNotificationChannel(CHANNELID);
@@ -145,12 +148,28 @@ public class AccelerometerService extends Service implements SensorEventListener
                     error -> Log.e(TAG, "Error sending data to MongoDB", error));
         }
     }
-    public void computeSpeed(){
-        if (accelerometerDataList.size() > 0) {
+    public static double calculateSpeed(ArrayList<AccelerometerData> accelerometerData, long lastRecordedTimestamp) {
+        double vx = 0, vy = 0, vz = 0;
+        for (AccelerometerData data : accelerometerData) {
+            float ax = data.getX();
+            float ay = data.getY();
+            float az = data.getZ();
+            long t = data.getTimestamp().getTime();
 
+            if (lastRecordedTimestamp != 0) {
+                double dt = (t - lastRecordedTimestamp) / 1000.0;
+                vx += ax * dt;
+                vy += ay * dt;
+                vz += az * dt;
+            }
+
+            lastRecordedTimestamp = t;
         }
-    }
 
+        return Math.sqrt(vx * vx + vy * vy + vz * vz) * 60;
+    }
+    private void speedRunnable(){
+    }
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
 

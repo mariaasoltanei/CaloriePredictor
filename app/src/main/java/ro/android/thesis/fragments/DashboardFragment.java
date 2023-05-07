@@ -124,7 +124,7 @@ public class DashboardFragment extends Fragment {
     StepService.StepCountBinder binder;
 
     //TODO: add wait time
-    private String url = "http://172.20.10.3:5000/calories/" + CalAidApp.getApp().currentUser().getId();
+    private String url = "http://172.20.10.3:5000/calories/" ;//+ CalAidApp.getApp().currentUser().getId();
     private String postBodyString;
     private MediaType mediaType;
     private RequestBody requestBody;
@@ -201,8 +201,12 @@ public class DashboardFragment extends Fragment {
                 binder = (StepService.StepCountBinder) iBinder;
                 StepService service = binder.getService();
                 int stepCount = service.getStepCount();
+                double speed = service.getSpeed();
+                double calories = service.getCalories();
                 Log.d("STEP COUNTER", "DashboardFragment/" + stepCount);
                 countSteps.setText(String.valueOf(stepCount));
+                tvSpeed.setText(String.format("%,.2f", speed));
+                tvCaloriesConsumed.setText(String.format("%,.2f",calories));
                 setNoSteps(stepCount);
                 if(stepCount == 100){
                     sendNotification("Congrats on your step progress.");
@@ -241,9 +245,10 @@ public class DashboardFragment extends Fragment {
     public void onResume() {
         super.onResume();
         Log.d(TAG, "onResume");
-        stepCountReceiver = new StepCountReceiver(countSteps);
+        stepCountReceiver = new StepCountReceiver(countSteps, tvSpeed, tvCaloriesConsumed);
         IntentFilter filter = new IntentFilter();
         filter.addAction(StepService.STEP_COUNT_ACTION);
+        filter.addAction(StepService.SPEED_ACTION);
         getActivity().registerReceiver(stepCountReceiver, filter);
     }
 
@@ -479,6 +484,7 @@ public class DashboardFragment extends Fragment {
         int age = calendar.get(Calendar.YEAR) - Integer.parseInt(user.getBirthDate().substring(user.getBirthDate().length() - 4));
         Log.d("SHARED PREFS TESTAGE", user.getBirthDate().substring(user.getBirthDate().length() - 4));
         Log.d("SHARED PREFS TESTAGE", String.valueOf(age));
+        //TODO: move bmr to fitness calculations
         double bmr = 0;
         if(user.getGender() == "Female"){
             bmr = 10 * user.getWeight() + 6.25 * user.getHeight() - 5 * age + 161;
@@ -505,14 +511,14 @@ public class DashboardFragment extends Fragment {
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
-                                long elapsedTime = System.currentTimeMillis() - startTime;
-                                int seconds = (int) (elapsedTime / 1000) % 60;
-                                int minutes = (int) ((elapsedTime / (1000*60)) % 60);
-                                String timeString = String.format("%02d:%02d", minutes, seconds);
-                                tvDuration.setText(String.valueOf(timeString));
-                                totalNumberCalories += calories;
-                                tvCaloriesConsumed.setText(String.format("%,.2f",totalNumberCalories));
-                                tvSpeed.setText(String.format("%,.2f", speed));
+//                                long elapsedTime = System.currentTimeMillis() - startTime;
+//                                int seconds = (int) (elapsedTime / 1000) % 60;
+//                                int minutes = (int) ((elapsedTime / (1000*60)) % 60);
+//                                String timeString = String.format("%02d:%02d", minutes, seconds);
+//                                tvDuration.setText(String.valueOf(timeString));
+//                                totalNumberCalories += calories;
+//                                tvCaloriesConsumed.setText(String.format("%,.2f",totalNumberCalories));
+//                                tvSpeed.setText(String.format("%,.2f", speed));
                             }
                         });
                     }
@@ -525,7 +531,7 @@ public class DashboardFragment extends Fragment {
 
     private void stopThread() {
         if (isThreadRunning) {
-            totalNumberCalories = 0;
+           // totalNumberCalories = 0;
             isThreadRunning = false;
             handler.removeCallbacks(runnable);
             timerHandler.removeCallbacks(runnable);

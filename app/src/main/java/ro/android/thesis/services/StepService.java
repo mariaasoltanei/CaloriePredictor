@@ -22,11 +22,20 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import org.bson.types.ObjectId;
 
+import java.lang.reflect.Type;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import io.realm.Realm;
 import io.realm.mongodb.User;
@@ -35,22 +44,33 @@ import ro.android.thesis.AuthenticationObserver;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
 import ro.android.thesis.domain.StepCount;
+import ro.android.thesis.utils.FitnessCalculations;
 
 
 public class StepService extends Service implements SensorEventListener {
     public static final String STEP_COUNT_ACTION = "ro.android.thesis.services.STEP_COUNT_ACTION";
     public static final String EXTRA_STEP_COUNT = "ro.android.thesis.services.EXTRA_STEP_COUNT";
+
+    public static final String SPEED_ACTION = "ro.android.thesis.services.SPEED_ACTION";
+    public static final String SPEED_NUMBER = "ro.android.thesis.services.SPEED_NUMBER";
+    public static final String CALORIES_NUMBER = "ro.android.thesis.services.CALORIES_NUMBER";
+
     private static final int SENSOR_DELAY = SensorManager.SENSOR_DELAY_NORMAL;
     private static final String TAG = "StepCountService";
+    private static final double SPEED_EPSILON = 0.0001;
     private boolean isStepServiceRunning;
     private int totalSteps = 0;
     private int stepsToday = 0;
+    double speed = 0;
+    double calories = 0;
+    double totalCalories = 0;
 
     private SensorManager sensorManager;
     private Sensor stepSensor;
 
     private final IBinder binder = new StepCountBinder();
     private final ArrayList<StepCount> stepCountList = new ArrayList<>();
+    private final ArrayList<StepCount> stepsTodayList = new ArrayList<>();
 
     private Realm realmStepService;
     private Handler handler;
@@ -60,7 +80,8 @@ public class StepService extends Service implements SensorEventListener {
     private SyncConfiguration syncConfiguration;
     private User user;
     private String userId;
-
+    private long startTime;
+    private static final double STRIDE_LENGTH = 0.75;
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -90,6 +111,7 @@ public class StepService extends Service implements SensorEventListener {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand: Service started");
         stepCountList.clear();
+        stepsTodayList.clear();
         if(intent != null){
             if(intent.getAction() == "startStepService"){
                 isStepServiceRunning = true;
@@ -103,7 +125,8 @@ public class StepService extends Service implements SensorEventListener {
                             @Override
                             public void run() {
                                 Log.d("CALAIDAPP -Step service", "steps");
-                               // sendStepsToMongoDB();
+                               //sendStepsToMongoDB();
+                                sendSpeedAndCalories();
                                 handler.postDelayed(this, 5000);
                             }
                         };
@@ -149,14 +172,22 @@ public class StepService extends Service implements SensorEventListener {
         sendBroadcast(intent);
     }
 
+    private void updateSpeed(double speed, double calories){
+        Intent intent = new Intent(SPEED_ACTION);
+        intent.putExtra(SPEED_NUMBER, speed);
+        totalCalories += calories;
+        intent.putExtra(CALORIES_NUMBER, totalCalories);
+        sendBroadcast(intent);
+    }
+
     public void resetStepCount() {
         this.stepsToday = this.totalSteps;
         //updateStepCount(stepsToday);
         Log.d(TAG, "onSensorChanged: Step today: " + stepsToday);
         Calendar midnight = Calendar.getInstance();
         midnight.setTimeInMillis(System.currentTimeMillis());
-        midnight.set(Calendar.HOUR_OF_DAY, 13);
-        midnight.set(Calendar.MINUTE, 56);
+        midnight.set(Calendar.HOUR_OF_DAY, 00);
+        midnight.set(Calendar.MINUTE, 00);
         midnight.set(Calendar.SECOND, 0);
         midnight.set(Calendar.MILLISECOND, 0);
 
@@ -175,13 +206,16 @@ public class StepService extends Service implements SensorEventListener {
     public void onSensorChanged(SensorEvent event) {
         totalSteps = (int) event.values[0];
         updateStepCount(totalSteps - stepsToday);
-        Log.d(TAG, "onSensorChanged: Step count: " + totalSteps);
         StepCount data = new StepCount();
         data.set_id(new ObjectId());
         data.setUserId(userId);
         data.setNoSteps(totalSteps);
         data.setTimestamp(new Date(System.currentTimeMillis()));
         stepCountList.add(data);
+        StepCount stepsTodayObj = new StepCount();
+        stepsTodayObj.setNoSteps(totalSteps - stepsToday);
+        stepsTodayObj.setTimestamp(new Date(System.currentTimeMillis()));
+        stepsTodayList.add(stepsTodayObj);
     }
 
     @Override
@@ -190,6 +224,14 @@ public class StepService extends Service implements SensorEventListener {
 
     public int getStepCount() {
         return totalSteps - stepsToday;
+    }
+
+    public double getSpeed() {
+        return speed;
+    }
+
+    public double getCalories() {
+        return calories;
     }
 
     private void createNotificationChannel(String CHANNEL_ID) {
@@ -203,10 +245,35 @@ public class StepService extends Service implements SensorEventListener {
             notificationManager.createNotificationChannel(channel);
         }
     }
+    private void sendSpeedAndCalories(){
+        if (stepsTodayList.size() > 0) {
+            int noStepsInterval=stepsTodayList.size();
+            Instant start = stepsTodayList.get(0).getTimestamp().toInstant();
+            Instant end = stepsTodayList.get(stepsTodayList.size() - 1).getTimestamp().toInstant();
+            Duration duration = Duration.between(start, end);
+            double timeIntervalMins = duration.toMillis() / 60000.0;
+            double timeIntervalHours = timeIntervalMins / 60.0;
+            if(timeIntervalMins > SPEED_EPSILON){
+                NumberFormat formatter = new DecimalFormat("#0.00");
+                double stepFrequency = noStepsInterval/timeIntervalMins;
+                double speed = Double.parseDouble(formatter.format(stepFrequency * STRIDE_LENGTH));
+                double mets = FitnessCalculations.calculateMETSWalking(speed);
+                double calories = Double.parseDouble(formatter.format(FitnessCalculations.calculateCalories(timeIntervalHours, mets, getUserWeight())));
+                Log.d("Interval-mets", String.valueOf(mets));
+                Log.d("Interval-calories", String.valueOf(calories));
+
+                updateSpeed(speed, calories);
+            }
+            else{updateSpeed(0.0, 0.0);}
+        }
+        else{updateSpeed(0.0, 0.0);}
+        stepsTodayList.clear();
+    }
 
     private void sendStepsToMongoDB() {
         if (stepCountList.size() > 0) {
             final ArrayList<StepCount> stepCountSend = new ArrayList<>(stepCountList);
+
             stepCountList.clear();
             realmStepService.executeTransactionAsync(new Realm.Transaction() {
                                                          @Override
@@ -216,6 +283,17 @@ public class StepService extends Service implements SensorEventListener {
                                                      }, () -> Log.d("StepService", "Data sent to MongoDB"),
                     error -> Log.e("StepService", "Error sending data to MongoDB", error));
         }
+
+    }
+
+    private double getUserWeight(){
+        SharedPreferences sharedPref = getApplicationContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
+        String userLogged = sharedPref.getString("user", null);
+        Gson gson = new Gson();
+        Type type = new TypeToken<ro.android.thesis.domain.User>() {
+        }.getType();
+        ro.android.thesis.domain.User user = gson.fromJson(userLogged, type);
+        return user.getWeight();
 
     }
 
