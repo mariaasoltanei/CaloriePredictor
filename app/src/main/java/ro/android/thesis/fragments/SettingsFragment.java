@@ -31,6 +31,7 @@ import ro.android.thesis.R;
 import ro.android.thesis.StepServiceViewModel;
 import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.services.AccelerometerService;
+import ro.android.thesis.services.GyroscopeService;
 import ro.android.thesis.services.StepService;
 
 public class SettingsFragment extends Fragment implements AuthenticationObserver {
@@ -73,7 +74,6 @@ public class SettingsFragment extends Fragment implements AuthenticationObserver
         return rootView;
     }
 
-    //TODO: Stop service when the user is logged out.
     //TODO: display steps from last logout - get step count from service and store it in shared prefs
     private void logOutUser() {
         SharedPreferences sharedPref = this.getContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
@@ -100,6 +100,9 @@ public class SettingsFragment extends Fragment implements AuthenticationObserver
                     Intent stopAccServiceIntent = new Intent(this.getActivity().getApplicationContext(), AccelerometerService.class);
                     stopAccServiceIntent.setAction("stopAccService");
                     this.getActivity().getApplicationContext().stopService(stopAccServiceIntent);
+                    Intent stopGyroServiceIntent = new Intent(this.getActivity().getApplicationContext(), GyroscopeService.class);
+                    stopGyroServiceIntent.setAction("stopGyroService");
+                    this.getActivity().getApplicationContext().stopService(stopGyroServiceIntent);
 
                     if(stepServiceViewModel.isServiceBound() && stepServiceViewModel.getStepServiceConnection() != null){
 

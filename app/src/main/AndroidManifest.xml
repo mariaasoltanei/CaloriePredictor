@@ -30,11 +30,16 @@
             android:enabled="true"
             android:label="Step Service" >
         </service>
-        <receiver
-            android:name=".broadcasts.NotificationReceiver"
+        <service
+            android:name=".services.GyroscopeService"
             android:enabled="true"
-            android:exported="false" >
-        </receiver>
+            android:label="Gyroscope Service" >
+        </service>
+<!--        <receiver-->
+<!--            android:name=".broadcasts.NotificationReceiver"-->
+<!--            android:enabled="true"-->
+<!--            android:exported="false" >-->
+<!--        </receiver>-->
         <receiver
             android:name=".broadcasts.StepCountReceiver"
             android:enabled="true"

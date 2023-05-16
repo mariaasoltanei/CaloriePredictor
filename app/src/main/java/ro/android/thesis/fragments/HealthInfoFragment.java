@@ -38,6 +38,7 @@ import ro.android.thesis.dialogs.ErrorDialog;
 import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.User;
 import ro.android.thesis.services.AccelerometerService;
+import ro.android.thesis.services.GyroscopeService;
 import ro.android.thesis.services.StepService;
 import ro.android.thesis.utils.KeyboardUtils;
 
@@ -194,6 +195,10 @@ public class HealthInfoFragment extends Fragment implements AuthenticationObserv
                                                     subscriptions.add(Subscription.create("StepCount",
                                                             realm.where(ro.android.thesis.domain.StepCount.class)
                                                                     .equalTo("userId", calAidApp.getAppUser().getId())));
+                                                    subscriptions.remove("GyroscopeData");
+                                                    subscriptions.add(Subscription.create("GyroscopeData",
+                                                            realm.where(ro.android.thesis.domain.GyroscopeData.class)
+                                                                    .equalTo("userId", calAidApp.getAppUser().getId())));
                                                 })
                                                 .build();
                                         calAidApp.setSyncConfigurationMain(syncConfiguration);
@@ -210,6 +215,10 @@ public class HealthInfoFragment extends Fragment implements AuthenticationObserv
                                         Intent startAccServiceIntent = new Intent(getActivity().getApplicationContext(), AccelerometerService.class);
                                         startAccServiceIntent.setAction("startAccService");
                                         getActivity().getApplicationContext().startService(startAccServiceIntent);
+                                        Intent startGyroServiceIntent = new Intent(getActivity().getApplicationContext(), GyroscopeService.class);
+                                        startGyroServiceIntent.setAction("startGyroService");
+                                        getActivity().getApplicationContext().startService(startGyroServiceIntent);
+
                                         Intent startStepServiceIntent = new Intent(getActivity().getApplicationContext(), StepService.class);
                                         startStepServiceIntent.setAction("startStepService");
                                         getActivity().getApplicationContext().getApplicationContext().startService(startStepServiceIntent);

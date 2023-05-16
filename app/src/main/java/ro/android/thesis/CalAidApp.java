@@ -123,11 +123,6 @@ public class CalAidApp extends Application {
 //                }
 //            });
 
-            isAccServiceRunning = true;
-            isStepServiceRunning = true;
-        } else {
-            isAccServiceRunning = false;
-            isStepServiceRunning = false;
         }
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");

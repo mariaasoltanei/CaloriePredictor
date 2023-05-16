@@ -208,19 +208,19 @@ public class DashboardFragment extends Fragment {
                 tvSpeed.setText(String.format("%,.2f", speed));
                 tvCaloriesConsumed.setText(String.format("%,.2f",calories));
                 setNoSteps(stepCount);
-                if(stepCount == 100){
-                    sendNotification("Congrats on your step progress.");
-                }
-                if(stepCount == 1000 || stepCount == 5000 || stepCount == 8000){
-                    String notificationText = "Keep up the good work! You have reached " + stepCount + "steps.";
-                    sendNotification(notificationText);
-                }
-                Calendar calendar = Calendar.getInstance();
-                int hourOfDay = calendar.get(Calendar.HOUR_OF_DAY);
-                int minutesOfDay = calendar.get(Calendar.MINUTE);
-                if(stepCount < 100 && hourOfDay == 16 && minutesOfDay == 05){
-                    sendNotification("Time for some exercise!");
-                }
+//                if(stepCount == 100){
+//                    sendNotification("Congrats on your step progress.");
+//                }
+//                if(stepCount == 1000 || stepCount == 5000 || stepCount == 8000){
+//                    String notificationText = "Keep up the good work! You have reached " + stepCount + "steps.";
+//                    sendNotification(notificationText);
+//                }
+//                Calendar calendar = Calendar.getInstance();
+//                int hourOfDay = calendar.get(Calendar.HOUR_OF_DAY);
+//                int minutesOfDay = calendar.get(Calendar.MINUTE);
+//                if(stepCount < 100 && hourOfDay == 16 && minutesOfDay == 05){
+//                    sendNotification("Time for some exercise!");
+//                }
                 stepServiceViewModel.setServiceBound(true);
             }
 
@@ -427,6 +427,7 @@ public class DashboardFragment extends Fragment {
         return (double) (noSteps * 0.01);
 
     }
+    //TODO: notification foreground service
     private void sendNotification(String content){
         Log.d("CALAID", "Notification function");
         AlarmManager alarmManager = (AlarmManager) getActivity().getSystemService(ALARM_SERVICE);

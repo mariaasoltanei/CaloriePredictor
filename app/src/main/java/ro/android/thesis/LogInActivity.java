@@ -23,6 +23,7 @@ import ro.android.thesis.dialogs.ErrorDialog;
 import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.User;
 import ro.android.thesis.services.AccelerometerService;
+import ro.android.thesis.services.GyroscopeService;
 import ro.android.thesis.services.StepService;
 import ro.android.thesis.utils.InputValidationUtils;
 import ro.android.thesis.utils.KeyboardUtils;
@@ -117,6 +118,10 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
                                         subscriptions.add(Subscription.create("StepCount",
                                                 realm.where(ro.android.thesis.domain.StepCount.class)
                                                         .equalTo("userId", calAidApp.getAppUser().getId())));
+                                        subscriptions.remove("GyroscopeData");
+                                        subscriptions.add(Subscription.create("GyroscopeData",
+                                                realm.where(ro.android.thesis.domain.GyroscopeData.class)
+                                                        .equalTo("userId", calAidApp.getAppUser().getId())));
                                     })
                                     .build();
                             calAidApp.setSyncConfigurationMain(syncConfiguration);
@@ -151,6 +156,9 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
                             Intent startAccServiceIntent = new Intent(getApplicationContext(), AccelerometerService.class);
                             startAccServiceIntent.setAction("startAccService");
                             startService(startAccServiceIntent);
+                            Intent startGyroServiceIntent = new Intent(getApplicationContext(), GyroscopeService.class);
+                            startGyroServiceIntent.setAction("startGyroService");
+                            startService(startGyroServiceIntent);
                             Intent startStepServiceIntent = new Intent(getApplicationContext(), StepService.class);
                             startStepServiceIntent.setAction("startStepService");
                             startService(startStepServiceIntent);

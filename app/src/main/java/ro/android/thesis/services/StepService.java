@@ -1,5 +1,6 @@
 package ro.android.thesis.services;
 
+import android.Manifest;
 import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -9,6 +10,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -21,6 +23,9 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -40,9 +45,11 @@ import java.util.concurrent.TimeUnit;
 import io.realm.Realm;
 import io.realm.mongodb.User;
 import io.realm.mongodb.sync.SyncConfiguration;
+import kotlinx.coroutines.channels.ChannelKt;
 import ro.android.thesis.AuthenticationObserver;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
+import ro.android.thesis.broadcasts.NotificationReceiver;
 import ro.android.thesis.domain.StepCount;
 import ro.android.thesis.utils.FitnessCalculations;
 
@@ -81,7 +88,9 @@ public class StepService extends Service implements SensorEventListener {
     private User user;
     private String userId;
     private long startTime;
+    final String CHANNELID = "Foreground Service ID 2";
     private static final double STRIDE_LENGTH = 0.75;
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -92,7 +101,7 @@ public class StepService extends Service implements SensorEventListener {
     public void onCreate() {
         super.onCreate();
         calAidApp = (CalAidApp) getApplicationContext();
-       // calAidApp.addObserver(this);
+        // calAidApp.addObserver(this);
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         if (stepSensor != null) {
@@ -112,8 +121,8 @@ public class StepService extends Service implements SensorEventListener {
         Log.d(TAG, "onStartCommand: Service started");
         stepCountList.clear();
         stepsTodayList.clear();
-        if(intent != null){
-            if(intent.getAction() == "startStepService"){
+        if (intent != null) {
+            if (intent.getAction() == "startStepService") {
                 isStepServiceRunning = true;
                 Realm.getInstanceAsync(calAidApp.getSyncConfigurationMain(), new Realm.Callback() {
                     @Override
@@ -125,8 +134,10 @@ public class StepService extends Service implements SensorEventListener {
                             @Override
                             public void run() {
                                 Log.d("CALAIDAPP -Step service", "steps");
-                               //sendStepsToMongoDB();
+                                //sendStepsToMongoDB();
                                 sendSpeedAndCalories();
+                                fireNotification(getStepCount());
+
                                 handler.postDelayed(this, 5000);
                             }
                         };
@@ -135,7 +146,8 @@ public class StepService extends Service implements SensorEventListener {
                 });
 
                 resetStepCount();
-                final String CHANNELID = "Foreground Service ID 2";
+                //fireNotification();
+
                 createNotificationChannel(CHANNELID);
                 Notification.Builder notification = new Notification.Builder(this, CHANNELID)
                         .setContentText("Collecting steps..")
@@ -144,7 +156,7 @@ public class StepService extends Service implements SensorEventListener {
 
                 startForeground(1002, notification.build());
             }
-            if(intent.getAction() == "stopStepService"){
+            if (intent.getAction() == "stopStepService") {
                 isStepServiceRunning = false;
                 stopForeground(true);
                 stopSelf();
@@ -152,7 +164,7 @@ public class StepService extends Service implements SensorEventListener {
         }
 
         return START_NOT_STICKY;
-}
+    }
 
     @Override
     public void onDestroy() {
@@ -172,7 +184,7 @@ public class StepService extends Service implements SensorEventListener {
         sendBroadcast(intent);
     }
 
-    private void updateSpeed(double speed, double calories){
+    private void updateSpeed(double speed, double calories) {
         Intent intent = new Intent(SPEED_ACTION);
         intent.putExtra(SPEED_NUMBER, speed);
         totalCalories += calories;
@@ -193,7 +205,7 @@ public class StepService extends Service implements SensorEventListener {
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         Intent intent = new Intent(STEP_COUNT_ACTION);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this.getApplicationContext(), 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent, PendingIntent.FLAG_IMMUTABLE);
         intent.putExtra(EXTRA_STEP_COUNT, stepsToday);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             alarmManager.setRepeating(AlarmManager.RTC, midnight.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pendingIntent);
@@ -205,6 +217,7 @@ public class StepService extends Service implements SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent event) {
         totalSteps = (int) event.values[0];
+        fireNotification(totalSteps - stepsToday);
         updateStepCount(totalSteps - stepsToday);
         StepCount data = new StepCount();
         data.set_id(new ObjectId());
@@ -227,11 +240,15 @@ public class StepService extends Service implements SensorEventListener {
     }
 
     public double getSpeed() {
+
         return speed;
     }
 
     public double getCalories() {
-        return calories;
+        DecimalFormat decimalFormat = new DecimalFormat("#0.00");
+        String formattedString = decimalFormat.format(calories);
+        return Double.parseDouble(formattedString);
+
     }
 
     private void createNotificationChannel(String CHANNEL_ID) {
@@ -245,17 +262,18 @@ public class StepService extends Service implements SensorEventListener {
             notificationManager.createNotificationChannel(channel);
         }
     }
-    private void sendSpeedAndCalories(){
+
+    private void sendSpeedAndCalories() {
         if (stepsTodayList.size() > 0) {
-            int noStepsInterval=stepsTodayList.size();
+            int noStepsInterval = stepsTodayList.size();
             Instant start = stepsTodayList.get(0).getTimestamp().toInstant();
             Instant end = stepsTodayList.get(stepsTodayList.size() - 1).getTimestamp().toInstant();
             Duration duration = Duration.between(start, end);
             double timeIntervalMins = duration.toMillis() / 60000.0;
             double timeIntervalHours = timeIntervalMins / 60.0;
-            if(timeIntervalMins > SPEED_EPSILON){
+            if (timeIntervalMins > SPEED_EPSILON) {
                 NumberFormat formatter = new DecimalFormat("#0.00");
-                double stepFrequency = noStepsInterval/timeIntervalMins;
+                double stepFrequency = noStepsInterval / timeIntervalMins;
                 double speed = Double.parseDouble(formatter.format(stepFrequency * STRIDE_LENGTH));
                 double mets = FitnessCalculations.calculateMETSWalking(speed);
                 double calories = Double.parseDouble(formatter.format(FitnessCalculations.calculateCalories(timeIntervalHours, mets, getUserWeight())));
@@ -263,10 +281,12 @@ public class StepService extends Service implements SensorEventListener {
                 Log.d("Interval-calories", String.valueOf(calories));
 
                 updateSpeed(speed, calories);
+            } else {
+                updateSpeed(0.0, 0.0);
             }
-            else{updateSpeed(0.0, 0.0);}
+        } else {
+            updateSpeed(0.0, 0.0);
         }
-        else{updateSpeed(0.0, 0.0);}
         stepsTodayList.clear();
     }
 
@@ -286,7 +306,7 @@ public class StepService extends Service implements SensorEventListener {
 
     }
 
-    private double getUserWeight(){
+    private double getUserWeight() {
         SharedPreferences sharedPref = getApplicationContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
         String userLogged = sharedPref.getString("user", null);
         Gson gson = new Gson();
@@ -310,6 +330,48 @@ public class StepService extends Service implements SensorEventListener {
         int savedSteps = sharedPref.getInt("numSteps", 0);
         Log.d(TAG, String.valueOf(savedSteps));
         return savedSteps;
+    }
+
+    private void fireNotification(int stepCount) {
+
+        if (stepCount == 100) {
+            sendNotification("Congrats, first 100 steps!", CHANNELID);
+        }
+        if (stepCount == 1000 || stepCount == 5000 || stepCount == 8000) {
+            String notificationText = "Keep up the good work! You have reached " + stepCount + "steps.";
+            sendNotification(notificationText, CHANNELID);
+        }
+        Calendar calendar = Calendar.getInstance();
+        int hourOfDay = calendar.get(Calendar.HOUR_OF_DAY);
+        int minutesOfDay = calendar.get(Calendar.MINUTE);
+        if (stepCount < 100 && hourOfDay == 16 && minutesOfDay == 05) {
+            sendNotification("Time for some exercise!", CHANNELID);
+        }
+    }
+
+    private void sendNotification(String message , String CHANNELID) {
+        // Customize the notification content
+        String title = "CalAid";
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNELID )
+                .setSmallIcon(R.drawable.icon_launcher)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true);
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        notificationManager.notify(2, builder.build());
     }
 
 
