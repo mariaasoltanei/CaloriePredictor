@@ -31,6 +31,11 @@
             android:label="Step Service" >
         </service>
         <service
+            android:name=".services.ActivityService"
+            android:enabled="true"
+            android:label="Activity Service" >
+        </service>
+        <service
             android:name=".services.GyroscopeService"
             android:enabled="true"
             android:label="Gyroscope Service" >

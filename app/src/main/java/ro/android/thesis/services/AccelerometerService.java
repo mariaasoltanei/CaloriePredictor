@@ -68,7 +68,7 @@ public class AccelerometerService extends Service implements SensorEventListener
                             @Override
                             public void run() {
                                 Log.d("CALAIDAPP -Acc service", "acc");
-                                //sendDataToMongoDB();
+                               // sendDataToMongoDB();
                                 handler.postDelayed(this, 5000);
                             }
                         };
@@ -138,29 +138,9 @@ public class AccelerometerService extends Service implements SensorEventListener
                 public void execute(Realm realm) {
                     realm.insert(dataToSend);
                 }
-            }, () -> Log.d(TAG, "Data sent to MongoDB"),
+            }, () -> Log.d(TAG, "ACC sent to MongoDB"),
                     error -> Log.e(TAG, "Error sending data to MongoDB", error));
         }
-    }
-    public static double calculateSpeed(ArrayList<AccelerometerData> accelerometerData, long lastRecordedTimestamp) {
-        double vx = 0, vy = 0, vz = 0;
-        for (AccelerometerData data : accelerometerData) {
-            float ax = data.getX();
-            float ay = data.getY();
-            float az = data.getZ();
-            long t = data.getTimestamp().getTime();
-
-            if (lastRecordedTimestamp != 0) {
-                double dt = (t - lastRecordedTimestamp) / 1000.0;
-                vx += ax * dt;
-                vy += ay * dt;
-                vz += az * dt;
-            }
-
-            lastRecordedTimestamp = t;
-        }
-
-        return Math.sqrt(vx * vx + vy * vy + vz * vz) * 60;
     }
 
     @Override

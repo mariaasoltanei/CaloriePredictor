@@ -66,67 +66,16 @@ public class SettingsFragment extends Fragment implements AuthenticationObserver
         stepServiceViewModel = new ViewModelProvider(requireActivity()).get(StepServiceViewModel.class);
         serviceConnection = stepServiceViewModel.getStepServiceConnection();
         Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));
-        btnLogOut = rootView.findViewById(R.id.btnLogOut);
+        btnLogOut = rootView.findViewById(R.id.btnTest);
         btnLogOut.setOnClickListener(view -> {
-            logOutUser();
+           // logOutUser();
         });
 
         return rootView;
     }
 
     //TODO: display steps from last logout - get step count from service and store it in shared prefs
-    private void logOutUser() {
-        SharedPreferences sharedPref = this.getContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.clear();
-        editor.apply();
-        loadingDialog.setCancelable(false);
-        loadingDialog.show(getChildFragmentManager(), "loading_screen");
-//        loadingDialog.dismiss();
-//        calAidApp.setSyncConfigurationMain(null);
-//        calAidApp.setAppUser(null);
-//        Intent i = new Intent(getActivity(), LogInActivity.class);
-//        startActivity(i);
-        if (sharedPref.getString("user", null) == null) {
-            Log.d("Realm", "Cleared Shared prefs");
-            calAidApp.getAppUser().logOutAsync(result -> {
-                if(result.isSuccess()){
-                    Log.d("CALAIDAPP", "User Logged out");
-                    Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));
-                    Log.d("CALAIDAPP", String.valueOf(calAidApp.getSyncConfigurationMain()));
-                    calAidApp.setSyncConfigurationMain(null);
-                    Log.d("CALAIDAPP", String.valueOf(calAidApp.getSyncConfigurationMain()));
 
-                    Intent stopAccServiceIntent = new Intent(this.getActivity().getApplicationContext(), AccelerometerService.class);
-                    stopAccServiceIntent.setAction("stopAccService");
-                    this.getActivity().getApplicationContext().stopService(stopAccServiceIntent);
-                    Intent stopGyroServiceIntent = new Intent(this.getActivity().getApplicationContext(), GyroscopeService.class);
-                    stopGyroServiceIntent.setAction("stopGyroService");
-                    this.getActivity().getApplicationContext().stopService(stopGyroServiceIntent);
-
-                    if(stepServiceViewModel.isServiceBound() && stepServiceViewModel.getStepServiceConnection() != null){
-
-                        Log.d("CALAIDAPP-SERVICE CONN", stepServiceViewModel.getStepServiceConnection().toString());
-                        getContext().unbindService(serviceConnection);
-                        stepServiceViewModel.setServiceBound(false);
-                        stepServiceViewModel.setStepServiceConnection(null);
-                        Intent stopStepService = new Intent(this.getActivity().getApplicationContext(), StepService.class);
-                        stopStepService.setAction("stopStepService");
-                        this.getActivity().getApplicationContext().stopService(stopStepService);
-                    }
-
-
-                    if(calAidApp.getAppUser() != null){
-                        calAidApp.setAppUser(null);
-                        //Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));
-                    }
-                    loadingDialog.dismiss();
-                    Intent i = new Intent(getActivity(), LogInActivity.class);
-                    startActivity(i);
-                }
-            });
-        }
-    }
 
     @Override
     public void onDestroyView() {

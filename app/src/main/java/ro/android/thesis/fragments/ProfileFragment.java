@@ -1,6 +1,8 @@
 package ro.android.thesis.fragments;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
@@ -16,6 +18,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -25,22 +28,29 @@ import java.lang.reflect.Type;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.mongodb.sync.SyncConfiguration;
+import ro.android.thesis.AuthenticationObserver;
 import ro.android.thesis.CalAidApp;
+import ro.android.thesis.LogInActivity;
 import ro.android.thesis.R;
+import ro.android.thesis.StepServiceViewModel;
 import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.AccelerometerData;
 import ro.android.thesis.domain.StepCount;
 import ro.android.thesis.domain.User;
+import ro.android.thesis.services.AccelerometerService;
+import ro.android.thesis.services.ActivityService;
+import ro.android.thesis.services.GyroscopeService;
+import ro.android.thesis.services.StepService;
 import ro.android.thesis.utils.KeyboardUtils;
 
-public class ProfileFragment extends Fragment {
+public class ProfileFragment extends Fragment implements AuthenticationObserver {
     Realm realm;
     //EditText etUpdateEmail;
     EditText etUpdateHeight;
     EditText etUpdateWeight;
 
     Button btnSaveUpdate;
-    Button btnUpdatePassword;
+    Button btnLogOut;
     User user;
     Handler handler = new Handler(Looper.getMainLooper());
     User userCopy;
@@ -48,6 +58,8 @@ public class ProfileFragment extends Fragment {
     SyncConfiguration syncConfiguration;
     io.realm.mongodb.User mongoUser;
     CalAidApp calAidApp;
+    private StepServiceViewModel stepServiceViewModel;
+    ServiceConnection serviceConnection;
 
     LoadingDialog loadingDialog = new LoadingDialog();
 
@@ -65,7 +77,7 @@ public class ProfileFragment extends Fragment {
         super.onCreate(savedInstanceState);
         calAidApp = (CalAidApp) getActivity().getApplication();
         syncConfiguration = calAidApp.getSyncConfigurationMain();
-
+        calAidApp.addObserver(this);
     }
 
     @Override
@@ -76,7 +88,7 @@ public class ProfileFragment extends Fragment {
 
         etUpdateWeight = rootView.findViewById(R.id.etUpdateWeight);
         btnSaveUpdate = rootView.findViewById(R.id.btnSaveUpdate);
-        btnUpdatePassword = rootView.findViewById(R.id.btnUpdatePassword);
+        btnLogOut = rootView.findViewById(R.id.btnLogOut);
         KeyboardUtils.setupUI(rootView, this.getActivity());
 //TODO: user should be able to edit activity multiplier
         loadingDialog.setCancelable(false);
@@ -131,11 +143,23 @@ public class ProfileFragment extends Fragment {
 
             }
         });
+        stepServiceViewModel = new ViewModelProvider(requireActivity()).get(StepServiceViewModel.class);
+        serviceConnection = stepServiceViewModel.getStepServiceConnection();
+        Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));
+        btnLogOut.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                logOutUser();
+            }
+        });
 
 
         return rootView;
     }
-
+    public void onDestroyView() {
+        super.onDestroyView();
+        calAidApp.removeObserver(this);
+    }
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -171,5 +195,66 @@ public class ProfileFragment extends Fragment {
         editor.putString("user", jsonUser);
         //editor.clear();
         editor.apply();
+    }
+    private void logOutUser() {
+        SharedPreferences sharedPref = this.getContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.clear();
+        editor.apply();
+        loadingDialog.setCancelable(false);
+        loadingDialog.show(getChildFragmentManager(), "loading_screen");
+//        loadingDialog.dismiss();
+//        calAidApp.setSyncConfigurationMain(null);
+//        calAidApp.setAppUser(null);
+//        Intent i = new Intent(getActivity(), LogInActivity.class);
+//        startActivity(i);
+        if (sharedPref.getString("user", null) == null) {
+            Log.d("Realm", "Cleared Shared prefs");
+            calAidApp.getAppUser().logOutAsync(result -> {
+                if(result.isSuccess()){
+                    Log.d("CALAIDAPP", "User Logged out");
+                    Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));
+                    Log.d("CALAIDAPP", String.valueOf(calAidApp.getSyncConfigurationMain()));
+                    calAidApp.setSyncConfigurationMain(null);
+                    Log.d("CALAIDAPP", String.valueOf(calAidApp.getSyncConfigurationMain()));
+
+                    Intent stopAccServiceIntent = new Intent(this.getActivity().getApplicationContext(), AccelerometerService.class);
+                    stopAccServiceIntent.setAction("stopAccService");
+                    this.getActivity().getApplicationContext().stopService(stopAccServiceIntent);
+                    Intent stopGyroServiceIntent = new Intent(this.getActivity().getApplicationContext(), GyroscopeService.class);
+                    stopGyroServiceIntent.setAction("stopGyroService");
+                    this.getActivity().getApplicationContext().stopService(stopGyroServiceIntent);
+
+                    if(stepServiceViewModel.isServiceBound() && stepServiceViewModel.getStepServiceConnection() != null){
+
+                        Log.d("CALAIDAPP-SERVICE CONN", stepServiceViewModel.getStepServiceConnection().toString());
+                        getContext().unbindService(serviceConnection);
+                        stepServiceViewModel.setServiceBound(false);
+                        stepServiceViewModel.setStepServiceConnection(null);
+                        Intent stopStepService = new Intent(this.getActivity().getApplicationContext(), StepService.class);
+                        stopStepService.setAction("stopStepService");
+                        this.getActivity().getApplicationContext().stopService(stopStepService);
+
+                        Intent stopAcctivityServiceIntent = new Intent(this.getActivity().getApplicationContext(), ActivityService.class);
+                        stopAcctivityServiceIntent.setAction("stopActivityService");
+                        this.getActivity().getApplicationContext().stopService(stopAcctivityServiceIntent);
+                    }
+
+
+                    if(calAidApp.getAppUser() != null){
+                        calAidApp.setAppUser(null);
+                        //Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));
+                    }
+                    loadingDialog.dismiss();
+                    Intent i = new Intent(getActivity(), LogInActivity.class);
+                    startActivity(i);
+                }
+            });
+        }
+    }
+    @Override
+    public void update(SyncConfiguration syncConfiguration, io.realm.mongodb.User user) {
+        this.syncConfiguration = syncConfiguration;
+        this.mongoUser = user;
     }
 }

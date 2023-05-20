@@ -94,7 +94,7 @@
         android:textAllCaps="false"
         style="@style/btn_style" />
     <Button
-        android:id="@+id/btnUpdatePassword"
+        android:id="@+id/btnLogOut"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -103,7 +103,7 @@
         android:layout_marginStart="22dp"
         android:layout_marginEnd="22dp"
         android:layout_marginTop="24dp"
-        android:text="Change password"
+        android:text="Log out"
         android:textColor="@color/black"
         android:textSize="22dp"
         android:textAllCaps="false"

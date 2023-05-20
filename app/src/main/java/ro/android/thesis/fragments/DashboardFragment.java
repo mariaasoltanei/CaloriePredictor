@@ -71,7 +71,7 @@ import ro.android.thesis.services.StepService;
 public class DashboardFragment extends Fragment {
     private final String TAG = "DashboardFragment";
     private double calories;
-    private double speed;
+    private String activity;
     private long startTime = 0;
     private int noStepsStart;
     private double totalNumberCalories = 0;
@@ -91,14 +91,6 @@ public class DashboardFragment extends Fragment {
 
     public void setCalories(double calories) {
         this.calories = calories;
-    }
-
-    public double getSpeed() {
-        return speed;
-    }
-
-    public void setSpeed(double speed) {
-        this.speed = speed;
     }
 
     private boolean isThreadRunning = false;
@@ -124,7 +116,7 @@ public class DashboardFragment extends Fragment {
     StepService.StepCountBinder binder;
 
     //TODO: add wait time
-    private String url = "http://172.20.10.3:5000/calories/" ;//+ CalAidApp.getApp().currentUser().getId();
+    private String url = "http://192.168.0.105:5000/calories/" + CalAidApp.getApp().currentUser().getId();
     private String postBodyString;
     private MediaType mediaType;
     private RequestBody requestBody;
@@ -208,19 +200,6 @@ public class DashboardFragment extends Fragment {
                 tvSpeed.setText(String.format("%,.2f", speed));
                 tvCaloriesConsumed.setText(String.format("%,.2f",calories));
                 setNoSteps(stepCount);
-//                if(stepCount == 100){
-//                    sendNotification("Congrats on your step progress.");
-//                }
-//                if(stepCount == 1000 || stepCount == 5000 || stepCount == 8000){
-//                    String notificationText = "Keep up the good work! You have reached " + stepCount + "steps.";
-//                    sendNotification(notificationText);
-//                }
-//                Calendar calendar = Calendar.getInstance();
-//                int hourOfDay = calendar.get(Calendar.HOUR_OF_DAY);
-//                int minutesOfDay = calendar.get(Calendar.MINUTE);
-//                if(stepCount < 100 && hourOfDay == 16 && minutesOfDay == 05){
-//                    sendNotification("Time for some exercise!");
-//                }
                 stepServiceViewModel.setServiceBound(true);
             }
 
@@ -297,6 +276,7 @@ public class DashboardFragment extends Fragment {
             Date currentDate = new Date();
             String currentDateString = dateFormat.format(currentDate);
             jsonObject.put("timestamp", currentDateString);
+            jsonObject.put("userWeight", getUserWeight());
             RequestBody requestBody = buildRequestBody(jsonObject);
             OkHttpClient okHttpClient = new OkHttpClient();
             Request request = new Request
@@ -321,16 +301,13 @@ public class DashboardFragment extends Fragment {
                 @Override
                 public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 try {
-//                    Log.d("OkHTTTP-resp", response.body().string());
+
                     JSONObject jsonObject = new JSONObject(response.body().string());
                     calories = jsonObject.getDouble("calories");
-                    speed = jsonObject.getDouble("speed");
-                    //duration = jsonObject.getDouble("activityDurationMins");
-                    setCalories(calories);
-                    setSpeed(speed);
+                    activity = jsonObject.getString("activity");
 
                     Log.d("OkHTTTPpost", String.valueOf(calories));
-                    Log.d("OkHTTTPpost", String.valueOf(speed));
+                    Log.d("OkHTTTPpost", String.valueOf(activity));
                     //Log.d("OkHTTTP", String.valueOf(duration));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -370,14 +347,14 @@ public class DashboardFragment extends Fragment {
                 try {
                     //Log.d("OkHTTTP", response.body().string());
                     JSONObject jsonObject = new JSONObject(response.body().string());
-                    calories = jsonObject.getDouble("calories");
-                    speed = jsonObject.getDouble("speed");
-                    //duration = jsonObject.getDouble("activityDurationMins");
-                    setCalories(calories);
-                    setSpeed(speed);
-
-                    Log.d("OkHTTTP", String.valueOf(calories));
-                    Log.d("OkHTTTP", String.valueOf(speed));
+//                    calories = jsonObject.getDouble("calories");
+//                    speed = jsonObject.getDouble("speed");
+//                    //duration = jsonObject.getDouble("activityDurationMins");
+//                    setCalories(calories);
+//                    setSpeed(speed);
+//
+//                    Log.d("OkHTTTP", String.valueOf(calories));
+//                    Log.d("OkHTTTP", String.valueOf(speed));
                     //Log.d("OkHTTTP", String.valueOf(duration));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -473,6 +450,16 @@ public class DashboardFragment extends Fragment {
         });
 
     }
+    private double getUserWeight(){
+        SharedPreferences sharedPref = this.getContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
+        String userLogged = sharedPref.getString("user", null);
+        Gson gson = new Gson();
+        Type type = new TypeToken<User>() {
+        }.getType();
+        User user = gson.fromJson(userLogged, type);
+        return user.getWeight();
+    }
+
     private int calculateCalories() {
         SharedPreferences sharedPref = this.getContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
         String userLogged = sharedPref.getString("user", null);
@@ -501,14 +488,12 @@ public class DashboardFragment extends Fragment {
             isThreadRunning = true;
             startTime = System.currentTimeMillis();
             handler = new Handler(Looper.getMainLooper());
-            timerHandler = new Handler(Looper.getMainLooper());
             runnable = new Runnable() {
                 @Override
                 public void run() {
                     if (isThreadRunning) {
                         postRequest(url);
-                        //timerHandler.postDelayed(this, 1000);
-                        handler.postDelayed(this, 5000);
+                        handler.postDelayed(this, 120004);
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
@@ -525,7 +510,7 @@ public class DashboardFragment extends Fragment {
                     }
                 }
             };
-            handler.postDelayed(runnable, 5000);
+            handler.postDelayed(runnable, 120004);
             //timerHandler.postDelayed(runnable, 1000);
         }
     }

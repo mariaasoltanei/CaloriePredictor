@@ -23,6 +23,7 @@ import ro.android.thesis.dialogs.ErrorDialog;
 import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.User;
 import ro.android.thesis.services.AccelerometerService;
+import ro.android.thesis.services.ActivityService;
 import ro.android.thesis.services.GyroscopeService;
 import ro.android.thesis.services.StepService;
 import ro.android.thesis.utils.InputValidationUtils;
@@ -162,6 +163,10 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
                             Intent startStepServiceIntent = new Intent(getApplicationContext(), StepService.class);
                             startStepServiceIntent.setAction("startStepService");
                             startService(startStepServiceIntent);
+
+                            Intent activityServiceIntent = new Intent(getApplicationContext(), ActivityService.class);
+                            activityServiceIntent.setAction("startActivityService");
+                            startService(activityServiceIntent);
                             loadingDialog.dismiss();
                             getRealm.close();
                             //getApplicationContext().startService(new Intent(getApplicationContext(), AccelerometerService.class));

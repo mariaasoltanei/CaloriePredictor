@@ -8,7 +8,7 @@
         android:layout_height="match_parent"
         android:text="SETTINGS" />
     <Button
-        android:id="@+id/btnLogOut"
+        android:id="@+id/btnTest"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Log out"

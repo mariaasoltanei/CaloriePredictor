@@ -19,6 +19,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -81,7 +82,9 @@ public class StepService extends Service implements SensorEventListener {
 
     private Realm realmStepService;
     private Handler handler;
+    private Handler resetStepsHandler;
     private Runnable runnable;
+    private Runnable resetStepsRunnable;
     private CalAidApp calAidApp;
 
     private SyncConfiguration syncConfiguration;
@@ -106,7 +109,7 @@ public class StepService extends Service implements SensorEventListener {
         stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         if (stepSensor != null) {
             sensorManager.registerListener(this, stepSensor, SENSOR_DELAY);
-            stepsToday = getStepsFromSharedPreferences();
+            stepsToday = totalSteps;
             Log.d(TAG, "stepsToday onStart " + stepsToday);
         } else {
             Log.e(TAG, "onCreate: Step sensor not available");
@@ -137,16 +140,13 @@ public class StepService extends Service implements SensorEventListener {
                                 //sendStepsToMongoDB();
                                 sendSpeedAndCalories();
                                 fireNotification(getStepCount());
-
+                                //resetStepCount();
                                 handler.postDelayed(this, 5000);
                             }
                         };
                         handler.postDelayed(runnable, 5000);
                     }
                 });
-
-                resetStepCount();
-                //fireNotification();
 
                 createNotificationChannel(CHANNELID);
                 Notification.Builder notification = new Notification.Builder(this, CHANNELID)
@@ -193,24 +193,26 @@ public class StepService extends Service implements SensorEventListener {
     }
 
     public void resetStepCount() {
-        this.stepsToday = this.totalSteps;
-        //updateStepCount(stepsToday);
-        Log.d(TAG, "onSensorChanged: Step today: " + stepsToday);
         Calendar midnight = Calendar.getInstance();
         midnight.setTimeInMillis(System.currentTimeMillis());
-        midnight.set(Calendar.HOUR_OF_DAY, 00);
-        midnight.set(Calendar.MINUTE, 00);
+        midnight.set(Calendar.HOUR_OF_DAY, 14);
+        midnight.set(Calendar.MINUTE, 38);
         midnight.set(Calendar.SECOND, 0);
         midnight.set(Calendar.MILLISECOND, 0);
-
-        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-        Intent intent = new Intent(STEP_COUNT_ACTION);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent, PendingIntent.FLAG_IMMUTABLE);
-        intent.putExtra(EXTRA_STEP_COUNT, stepsToday);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setRepeating(AlarmManager.RTC, midnight.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pendingIntent);
+        if(System.currentTimeMillis() == midnight.getTimeInMillis()){
+            this.stepsToday = 0;
+            Log.d(TAG, "onSensorChanged: Step today: " + stepsToday);
+            AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+            Intent intent = new Intent(STEP_COUNT_ACTION);
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent, PendingIntent.FLAG_IMMUTABLE);
+            intent.putExtra(EXTRA_STEP_COUNT, stepsToday);
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC, System.currentTimeMillis(), pendingIntent);
+//            }
+            addStepsToSharedPreferences();
+            sendBroadcast(intent);
         }
-        addStepsToSharedPreferences();
+
         //sendBroadcast(intent);
     }
 

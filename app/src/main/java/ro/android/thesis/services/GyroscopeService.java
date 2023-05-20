@@ -135,7 +135,7 @@ public class GyroscopeService extends Service implements SensorEventListener {
                                                                   public void execute(Realm realm) {
                                                                       realm.insert(dataToSend);
                                                                   }
-                                                              }, () -> Log.d(TAG, "Data sent to MongoDB"),
+                                                              }, () -> Log.d(TAG, "GYRO sent to MongoDB"),
                     error -> Log.e(TAG, "Error sending data to MongoDB", error));
         }
     }
