@@ -189,7 +189,8 @@ public class ActivityService extends Service {
     }
     private void sendActivity(double noCaloriesActivity, String activityType) {
         Intent intent = new Intent(ACTIVITY_ACTION);
-        intent.putExtra(ACTIVITY_TYPE, new ActivityData(activityType, noCaloriesActivity));
+        intent.putExtra(ACTIVITY_TYPE, activityType);
+        intent.putExtra(NO_CALORIES, noCaloriesActivity);
         sendBroadcast(intent);
     }
     private double getUserWeight(){

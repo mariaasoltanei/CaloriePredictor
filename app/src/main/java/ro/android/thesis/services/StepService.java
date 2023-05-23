@@ -46,11 +46,8 @@ import java.util.concurrent.TimeUnit;
 import io.realm.Realm;
 import io.realm.mongodb.User;
 import io.realm.mongodb.sync.SyncConfiguration;
-import kotlinx.coroutines.channels.ChannelKt;
-import ro.android.thesis.AuthenticationObserver;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
-import ro.android.thesis.broadcasts.NotificationReceiver;
 import ro.android.thesis.domain.StepCount;
 import ro.android.thesis.utils.FitnessCalculations;
 

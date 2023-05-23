@@ -26,15 +26,13 @@ public class ActivityItemAdapter extends RecyclerView.Adapter<ActivityItemAdapte
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.activity_item, parent, false);
         return new ViewHolder(view);
     }
-    public void updateData(List<ActivityData> newData) {
-        activityDataList = newData;
+    public void updateData(ActivityData newData) {
+        activityDataList.add(newData);
         notifyDataSetChanged();
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        //String item = activityDataList.get(position);
-        final int index = holder.getAdapterPosition();
         ActivityData item = activityDataList.get(position);
         holder.tvActivityType.setText(activityDataList.get(position).getActivityType());
         holder.tvNoCalories.setText(String.valueOf(activityDataList.get(position).getNoCalories()) + " kcal");
