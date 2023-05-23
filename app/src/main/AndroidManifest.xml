@@ -50,6 +50,11 @@
             android:enabled="true"
             android:exported="false" >
         </receiver>
+        <receiver
+            android:name=".broadcasts.ActivityReceiver"
+            android:enabled="true"
+            android:exported="false" >
+        </receiver>
 
         <activity android:name=".MainActivity" />
         <activity android:name=".SignUpActivity" />

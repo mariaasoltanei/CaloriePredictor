@@ -140,7 +140,7 @@ public class StepService extends Service implements SensorEventListener {
                                 //sendStepsToMongoDB();
                                 sendSpeedAndCalories();
                                 fireNotification(getStepCount());
-                                //resetStepCount();
+                                resetStepCount();
                                 handler.postDelayed(this, 5000);
                             }
                         };
@@ -200,7 +200,7 @@ public class StepService extends Service implements SensorEventListener {
         midnight.set(Calendar.SECOND, 0);
         midnight.set(Calendar.MILLISECOND, 0);
         if(System.currentTimeMillis() == midnight.getTimeInMillis()){
-            this.stepsToday = 0;
+            this.stepsToday = this.totalSteps;
             Log.d(TAG, "onSensorChanged: Step today: " + stepsToday);
             AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
             Intent intent = new Intent(STEP_COUNT_ACTION);

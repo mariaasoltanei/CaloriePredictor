@@ -1,0 +1,38 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    >
+
+    <ImageView
+        android:id="@+id/imgActivityType"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@drawable/walking_icon"
+        />
+    <TextView
+        android:id="@+id/tvActivityType"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:text="ActivityType"
+        android:textSize="18dp"
+        android:fontFamily="@font/roboto_black"
+        android:textColor="@color/black"
+        android:layout_marginLeft="32dp"
+        android:gravity="center">
+
+    </TextView>
+
+    <TextView
+        android:id="@+id/tvNoCalories"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:textSize="18dp"
+        android:text="12.90 kcal"
+        android:layout_marginLeft="50dp"
+        android:textColor="@color/black"
+        android:gravity="center_vertical"
+       />
+
+</LinearLayout>
