@@ -28,7 +28,6 @@ import java.lang.reflect.Type;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.mongodb.sync.SyncConfiguration;
-import ro.android.thesis.ActivityServiceViewModel;
 import ro.android.thesis.AuthenticationObserver;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.LogInActivity;
@@ -60,9 +59,7 @@ public class ProfileFragment extends Fragment implements AuthenticationObserver 
     io.realm.mongodb.User mongoUser;
     CalAidApp calAidApp;
     private StepServiceViewModel stepServiceViewModel;
-    private ActivityServiceViewModel activityServiceViewModel;
     ServiceConnection serviceConnection;
-    ServiceConnection activityServiceConnection;
 
     LoadingDialog loadingDialog = new LoadingDialog();
 
@@ -96,6 +93,7 @@ public class ProfileFragment extends Fragment implements AuthenticationObserver 
 //TODO: user should be able to edit activity multiplier
         loadingDialog.setCancelable(false);
         loadingDialog.show(getChildFragmentManager(), "loading_screen");
+        //loadingDialog.dismiss();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -148,9 +146,6 @@ public class ProfileFragment extends Fragment implements AuthenticationObserver 
         });
         stepServiceViewModel = new ViewModelProvider(requireActivity()).get(StepServiceViewModel.class);
         serviceConnection = stepServiceViewModel.getStepServiceConnection();
-
-        activityServiceViewModel = new ViewModelProvider(requireActivity()).get(ActivityServiceViewModel.class);
-        activityServiceConnection = activityServiceViewModel.getActivityServiceConnection();
         Log.d("CALAIDAPP", String.valueOf(calAidApp.getAppUser()));
         btnLogOut.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -241,17 +236,9 @@ public class ProfileFragment extends Fragment implements AuthenticationObserver 
                         stopStepService.setAction("stopStepService");
                         this.getActivity().getApplicationContext().stopService(stopStepService);
 
-                    }
-
-                    if(activityServiceViewModel.isServiceBound() && activityServiceViewModel.getActivityServiceConnection() != null){
-
-                        Log.d("CALAIDAPP-SERVICE CONNActivity", activityServiceViewModel.getActivityServiceConnection().toString());
-                        getContext().unbindService(activityServiceConnection);
-                        activityServiceViewModel.setServiceBound(false);
-                        activityServiceViewModel.setActivityServiceConnection(null);
-                        Intent stopActivityService = new Intent(this.getActivity().getApplicationContext(), ActivityService.class);
-                        stopActivityService.setAction("stopActivityService");
-                        this.getActivity().getApplicationContext().stopService(stopActivityService);
+                        Intent stopAcctivityServiceIntent = new Intent(this.getActivity().getApplicationContext(), ActivityService.class);
+                        stopAcctivityServiceIntent.setAction("stopActivityService");
+                        this.getActivity().getApplicationContext().stopService(stopAcctivityServiceIntent);
                     }
 
 

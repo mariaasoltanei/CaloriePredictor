@@ -374,9 +374,9 @@ public class StepService extends Service implements SensorEventListener {
     }
 
 
-public class StepCountBinder extends Binder {
-    public StepService getService() {
-        return StepService.this;
+    public class StepCountBinder extends Binder {
+        public StepService getService() {
+            return StepService.this;
+        }
     }
-}
 }

@@ -34,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
     TextView navMenuName;
     private Context context;
     ServiceConnection serviceConnection;
-    ServiceConnection activitySC;
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -43,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         context = this;
         StepServiceViewModel stepServiceViewModel = new ViewModelProvider(this).get(StepServiceViewModel.class);
-        ActivityServiceViewModel activityServiceViewModel = new ViewModelProvider(this).get(ActivityServiceViewModel.class);
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
         findViewById(R.id.imgIconMenu).setOnClickListener(view -> drawerLayout.openDrawer(Gravity.LEFT));
         NavigationView navigationView = findViewById(R.id.navigationView);

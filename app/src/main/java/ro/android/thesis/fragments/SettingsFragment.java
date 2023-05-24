@@ -1,6 +1,5 @@
 package ro.android.thesis.fragments;
 
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -8,7 +7,6 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,14 +31,19 @@ import io.realm.mongodb.App;
 import io.realm.mongodb.User;
 import io.realm.mongodb.sync.SyncConfiguration;
 import ro.android.thesis.ActivityItemAdapter;
-import ro.android.thesis.ActivityServiceViewModel;
 import ro.android.thesis.AuthenticationObserver;
 import ro.android.thesis.CalAidApp;
+import ro.android.thesis.LogInActivity;
 import ro.android.thesis.R;
+import ro.android.thesis.StepServiceViewModel;
 import ro.android.thesis.broadcasts.ActivityReceiver;
+import ro.android.thesis.broadcasts.StepCountReceiver;
+import ro.android.thesis.dialogs.LoadingDialog;
 import ro.android.thesis.domain.ActivityData;
+import ro.android.thesis.services.AccelerometerService;
 import ro.android.thesis.services.ActivityService;
-
+import ro.android.thesis.services.GyroscopeService;
+import ro.android.thesis.services.StepService;
 
 public class SettingsFragment extends Fragment implements AuthenticationObserver {
     private static final String TAG = "SettingsFragment";
@@ -48,17 +51,18 @@ public class SettingsFragment extends Fragment implements AuthenticationObserver
     private RecyclerView recyclerView;
     private ActivityItemAdapter activityItemAdapter;
     private List<ActivityData> activityDataList;
-    ServiceConnection activityServiceConnection;
     User mongoUser;
     CalAidApp calAidApp;
     private ActivityReceiver activityReceiver;
-    ActivityService.ActivityBinder activityBinder;
-    private ActivityServiceViewModel activityServiceViewModel;
 
 
     public SettingsFragment() {
     }
 
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+    }
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -72,39 +76,17 @@ public class SettingsFragment extends Fragment implements AuthenticationObserver
         Log.d(TAG, "onCreate");
         calAidApp = (CalAidApp) getActivity().getApplication();
         calAidApp.addObserver(this);
-        activityServiceViewModel = new ViewModelProvider(requireActivity()).get(ActivityServiceViewModel.class);
-        activityServiceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-                activityBinder = (ActivityService.ActivityBinder) iBinder;
-                ActivityService service = activityBinder.getService();
-//                int stepCount = service.getStepCount();
-                Log.d(TAG, "SERVICE CONN ACTIVE" );
-//                countSteps.setText(String.valueOf(stepCount));
-                activityServiceViewModel.setServiceBound(true);
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName componentName) {
-                activityBinder = null;
-                activityServiceViewModel.setServiceBound(false);
-            }
-        };
-
-        activityServiceViewModel.setActivityServiceConnection(activityServiceConnection);
-
-        Intent serviceIntent = new Intent(getActivity(), ActivityService.class);
-        getActivity().bindService(serviceIntent, activityServiceConnection, Context.BIND_AUTO_CREATE);
-
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         Log.d(TAG, "onCreateView");
-
         return inflater.inflate(R.layout.fragment_settings, container, false);
 
     }
+
+    //TODO: display steps from last logout - get step count from service and store it in shared prefs
+
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         Log.d(TAG, "onViewCreated");

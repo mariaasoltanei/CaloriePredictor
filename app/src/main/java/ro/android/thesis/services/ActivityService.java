@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
-import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -48,7 +47,6 @@ public class ActivityService extends Service {
     public static final String ACTIVITY_ACTION = "ro.android.thesis.services.ACTIVITY_ACTION";
     public static final String NO_CALORIES = "ro.android.thesis.services.NO_CALORIES";
     public static final String ACTIVITY_TYPE = "ro.android.thesis.services.ACTIVITY_TYPE";
-    private final IBinder activityBinder = new ActivityBinder();
     private CalAidApp calAidApp;
     private String url = "http://192.168.0.107:5000/calories/" + CalAidApp.getApp().currentUser().getId();
 
@@ -124,7 +122,7 @@ public class ActivityService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return activityBinder;
+        return null;
     }
 
     private RequestBody buildRequestBody(JSONObject jsonObject) {
@@ -213,11 +211,6 @@ public class ActivityService extends Service {
             channel.setDescription(description);
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
-        }
-    }
-    public class ActivityBinder extends Binder {
-        public ActivityService getService() {
-            return ActivityService.this;
         }
     }
 
