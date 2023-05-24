@@ -405,16 +405,6 @@ public class DashboardFragment extends Fragment {
 
     }
     //TODO: notification foreground service
-    private void sendNotification(String content){
-        Log.d("CALAID", "Notification function");
-        AlarmManager alarmManager = (AlarmManager) getActivity().getSystemService(ALARM_SERVICE);
-        Intent intent = new Intent(getActivity(), NotificationReceiver.class);
-        intent.putExtra("content", content);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity().getApplicationContext(), 0, intent, PendingIntent.FLAG_IMMUTABLE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() +100, AlarmManager.INTERVAL_DAY, pendingIntent);
-        }
-    }
 
     public void startProgressBarThread() {
         countSteps.addTextChangedListener(new TextWatcher() {
