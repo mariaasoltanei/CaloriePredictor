@@ -68,7 +68,7 @@ public class AccelerometerService extends Service implements SensorEventListener
                             @Override
                             public void run() {
                                 Log.d("CALAIDAPP -Acc service", "acc");
-                                sendDataToMongoDB();
+                                //sendDataToMongoDB();
                                 handler.postDelayed(this, 5000);
                             }
                         };

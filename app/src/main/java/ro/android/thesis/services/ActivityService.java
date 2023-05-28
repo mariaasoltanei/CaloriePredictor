@@ -52,8 +52,8 @@ public class ActivityService extends Service {
     public static final String NO_CALORIES = "ro.android.thesis.services.NO_CALORIES";
     public static final String ACTIVITY_TYPE = "ro.android.thesis.services.ACTIVITY_TYPE";
     private CalAidApp calAidApp;
-    ///private String url = "http://172.20.10.3:5000/calories/"+ CalAidApp.getApp().currentUser().getId();
-    private String urlTest = "http://94.245.91.135:5000/calories/"+ CalAidApp.getApp().currentUser().getId();
+    private String url = " http://192.168.0.102:5000/calories/"+ CalAidApp.getApp().currentUser().getId();
+    //private String urlTest = "http://94.245.91.135:5000/calories/"+ CalAidApp.getApp().currentUser().getId();
     List<ActivityData> activityDataList;
     private double calories;
     private double totalCaloriesActivity = 0;
@@ -94,7 +94,7 @@ public class ActivityService extends Service {
                     public void run() {
                         Log.d(TAG, "activity");
 
-                        postRequest(urlTest);
+                        postRequest(url);
 
                         requestHandler.postDelayed(requestRunnable, 300000);
                     }
