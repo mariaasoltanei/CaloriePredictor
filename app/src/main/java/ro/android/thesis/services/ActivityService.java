@@ -25,8 +25,12 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import io.realm.Realm;
 import okhttp3.Call;
@@ -48,9 +52,11 @@ public class ActivityService extends Service {
     public static final String NO_CALORIES = "ro.android.thesis.services.NO_CALORIES";
     public static final String ACTIVITY_TYPE = "ro.android.thesis.services.ACTIVITY_TYPE";
     private CalAidApp calAidApp;
-    private String url = "http://192.168.0.107:5000/calories/" + CalAidApp.getApp().currentUser().getId();
-
+    ///private String url = "http://172.20.10.3:5000/calories/"+ CalAidApp.getApp().currentUser().getId();
+    private String urlTest = "http://94.245.91.135:5000/calories/"+ CalAidApp.getApp().currentUser().getId();
+    List<ActivityData> activityDataList;
     private double calories;
+    private double totalCaloriesActivity = 0;
     private String activity;
 
     public double getCalories() {
@@ -79,7 +85,7 @@ public class ActivityService extends Service {
 
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand: Service started");
-
+        activityDataList = new ArrayList<>();
         if(intent != null){
             if(intent.getAction() == "startActivityService"){
                 requestHandler = new Handler();
@@ -87,13 +93,13 @@ public class ActivityService extends Service {
                     @Override
                     public void run() {
                         Log.d(TAG, "activity");
-                        sendActivity(15, "WALKING");
-                        //postRequest(url);
-                        //trb sa trimit obiect de tip activity data
-                        requestHandler.postDelayed(requestRunnable, 5000);
+
+                        postRequest(urlTest);
+
+                        requestHandler.postDelayed(requestRunnable, 300000);
                     }
                 };
-                requestHandler.postDelayed(requestRunnable, 5000 );//120000
+                requestHandler.postDelayed(requestRunnable, 300000 );//300000 120000
                 final String CHANNELID = "Foreground Service ID 5";
                 createNotificationChannel(CHANNELID);
                 Notification.Builder notification = new Notification.Builder(this, CHANNELID)
@@ -164,17 +170,18 @@ public class ActivityService extends Service {
                 @Override
                 public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                     try {
-
                         JSONObject jsonObject = new JSONObject(response.body().string());
                         double caloriesResponse = jsonObject.getDouble("calories");
                         String activityResponse = jsonObject.getString("activity");
+                        NumberFormat formatter = new DecimalFormat("#0.00");
                         setActivity(activityResponse);
-                        setCalories(caloriesResponse);
-
+                        setCalories(Double.parseDouble(formatter.format(caloriesResponse)));
+                        activityDataList.add(new ActivityData(activity, calories));
+                        sendActivity(calories);
+                        addActivitySharedPrefs();
 
                         Log.d("OkHTTTPpost", String.valueOf(calories));
                         Log.d("OkHTTTPpost", String.valueOf(activity));
-                        //Log.d("OkHTTTP", String.valueOf(duration));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     } catch (JSONException e) {
@@ -187,10 +194,11 @@ public class ActivityService extends Service {
             throw new RuntimeException(e);
         }
     }
-    private void sendActivity(double noCaloriesActivity, String activityType) {
+    //TODO: CU ASTA SA TRIMIT NR CALORII DIN REQUEST
+    private void sendActivity(double noCaloriesActivity) {
         Intent intent = new Intent(ACTIVITY_ACTION);
-        intent.putExtra(ACTIVITY_TYPE, activityType);
-        intent.putExtra(NO_CALORIES, noCaloriesActivity);
+        totalCaloriesActivity += noCaloriesActivity;
+        intent.putExtra(NO_CALORIES, totalCaloriesActivity);
         sendBroadcast(intent);
     }
     private double getUserWeight(){
@@ -212,6 +220,15 @@ public class ActivityService extends Service {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
+    }
+
+    public void addActivitySharedPrefs(){
+        SharedPreferences sharedPref = this.getSharedPreferences("activityDetails", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        Gson gson = new Gson();
+        String jsonActivity = gson.toJson(activityDataList);
+        editor.putString("activity", jsonActivity);
+        editor.apply();
     }
 
 }

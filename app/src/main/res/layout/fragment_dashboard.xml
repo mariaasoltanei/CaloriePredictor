@@ -86,40 +86,10 @@
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:background="@drawable/bg_widget_dashboard"
-        android:padding="16dp">
-    <TextView
-        android:id="@+id/tvNumCalories"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="1800 kcal"
-        android:textSize="22dp"
-        android:fontFamily="@font/roboto_black"
-        android:textColor="@color/black"
-        android:textAlignment="viewStart"
-        />
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Target kcal"
-        android:textSize="16dp"
-        android:fontFamily="@font/nunito"
-        android:textColor="@color/grey"
-        android:layout_below="@id/tvNumCalories"
-        />
-    <ImageView
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:src="@drawable/ic_target_cals"
-        android:layout_alignParentEnd="true"
-        />
-
-    </RelativeLayout>
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:background="@drawable/bg_widget_dashboard"
-        android:padding="16dp">
+        android:paddingRight="56dp"
+        android:paddingLeft="56dp"
+        android:paddingBottom="16dp"
+        android:paddingTop="16dp">
 
         <TextView
             android:id="@+id/tvTitleCalories"
@@ -127,29 +97,19 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/roboto_black"
             android:text="Calories"
-            android:textAlignment="viewStart"
+            android:layout_alignParentLeft="true"
             android:textColor="@color/black"
             android:textSize="22dp" />
+
         <TextView
             android:id="@+id/tvTitleSpeed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/roboto_black"
             android:text="Speed"
-            android:textSize="22dp"
-            android:fontFamily="@font/roboto_black"
-            android:textColor="@color/black"
-            android:layout_centerHorizontal="true"
-            />
-        <TextView
-            android:id="@+id/tvTitleDuration"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Duration"
-            android:textSize="22dp"
-            android:fontFamily="@font/roboto_black"
-            android:textColor="@color/black"
             android:layout_alignParentEnd="true"
-            />
+            android:textColor="@color/black"
+            android:textSize="22dp" />
 
         <TextView
             android:id="@+id/tvCaloriesConsumed"
@@ -157,82 +117,102 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/tvTitleCalories"
             android:fontFamily="@font/nunito"
-            android:text="00.00"
+            android:text="00.0"
+            android:layout_marginLeft="8dp"
             android:textAlignment="viewStart"
             android:textColor="@color/black"
             android:textSize="20dp" />
+
         <TextView
             android:id="@+id/tvSpeed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="00.00"
-            android:textSize="20dp"
-            android:fontFamily="@font/nunito"
-            android:textColor="@color/black"
-            android:layout_centerHorizontal="true"
             android:layout_below="@id/tvTitleSpeed"
-            />
-        <TextView
-            android:id="@+id/tvDuration"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="00:00"
-            android:textSize="20dp"
+            android:layout_alignParentRight="true"
             android:fontFamily="@font/nunito"
+            android:layout_marginRight="6dp"
+            android:text="00.0"
             android:textColor="@color/black"
-            android:layout_alignParentEnd="true"
-            android:layout_below="@id/tvTitleDuration"
-            />
+            android:textSize="20dp" />
+
         <TextView
             android:id="@+id/measureCalories"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@id/tvCaloriesConsumed"
+            android:layout_marginLeft="8dp"
             android:fontFamily="@font/nunito"
             android:text="kcals"
             android:textAlignment="viewStart"
             android:textColor="@color/grey"
             android:textSize="18dp" />
+
         <TextView
             android:id="@+id/tvMeasureSpeed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="m/min"
-            android:textSize="18dp"
-            android:fontFamily="@font/nunito"
-            android:textColor="@color/grey"
-            android:layout_centerHorizontal="true"
             android:layout_below="@id/tvSpeed"
-            />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="mins"
-            android:textSize="18dp"
+            android:layout_centerHorizontal="true"
             android:fontFamily="@font/nunito"
+            android:text="m/min"
+            android:layout_alignParentRight="true"
             android:textColor="@color/grey"
-            android:layout_alignParentEnd="true"
-            android:layout_below="@id/tvDuration"
-            />
+            android:textSize="18dp"
+            android:layout_marginRight="8dp"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:background="@drawable/bg_widget_dashboard"
+        android:padding="16dp">
+    <TextView
+        android:id="@+id/tvNumCalories"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="1800"
+        android:textSize="22dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginLeft="8dp"
+        android:fontFamily="@font/roboto_black"
+        android:textColor="@color/black"
+        android:textAlignment="viewStart"
+        />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Target calories"
+        android:textSize="16dp"
+        android:fontFamily="@font/nunito"
+        android:textColor="@color/grey"
+        android:layout_below="@id/tvNumCalories"
+        android:layout_marginRight="8dp"
+        android:layout_marginLeft="8dp"
+        />
+    <ImageView
+        android:id="@+id/fireSign"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@drawable/ic_target_cals"
+        android:layout_alignParentEnd="true"
+        />
 
         <Button
-            android:id="@+id/btnTestRequest"
-            style="@style/btn_style"
-            android:layout_width="match_parent"
+            android:id="@+id/btnUpdateCalories"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/tvMeasureSpeed"
-            android:layout_gravity="center"
-            android:layout_marginStart="22dp"
-            android:layout_marginTop="24dp"
-            android:layout_marginEnd="22dp"
+            android:layout_toStartOf="@+id/fireSign"
+            android:layout_marginLeft="22dp"
             android:background="@drawable/btn_green"
             android:fontFamily="@font/work_sans"
-            android:text="Start"
-            android:textAllCaps="false"
+            android:text="Update"
+            android:textColor="@color/black" />
 
-            android:textColor="@color/black"
-            android:textSize="22dp" />
+
     </RelativeLayout>
+
+
 
 
 </LinearLayout>

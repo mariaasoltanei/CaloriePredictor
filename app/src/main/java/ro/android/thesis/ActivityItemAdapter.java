@@ -1,5 +1,6 @@
 package ro.android.thesis;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,6 +35,7 @@ public class ActivityItemAdapter extends RecyclerView.Adapter<ActivityItemAdapte
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         ActivityData item = activityDataList.get(position);
+        Log.d("AdapterActivity", item.getActivityType());
         holder.tvActivityType.setText(activityDataList.get(position).getActivityType());
         holder.tvNoCalories.setText(String.valueOf(activityDataList.get(position).getNoCalories()) + " kcal");
         if(item.getActivityType() == "WALKING"){

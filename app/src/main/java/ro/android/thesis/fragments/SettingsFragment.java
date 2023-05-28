@@ -12,6 +12,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -49,6 +51,8 @@ public class SettingsFragment extends Fragment implements AuthenticationObserver
     private static final String TAG = "SettingsFragment";
     SyncConfiguration syncConfiguration;
     private RecyclerView recyclerView;
+    LinearLayout llEmptyActivities;
+    TextView tvCaloriesBurnedActivities;
     private ActivityItemAdapter activityItemAdapter;
     private List<ActivityData> activityDataList;
     User mongoUser;
@@ -59,10 +63,6 @@ public class SettingsFragment extends Fragment implements AuthenticationObserver
     public SettingsFragment() {
     }
 
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-    }
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -80,31 +80,34 @@ public class SettingsFragment extends Fragment implements AuthenticationObserver
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        Log.d(TAG, "onCreateView");
-        return inflater.inflate(R.layout.fragment_settings, container, false);
-
+        View rootView = inflater.inflate(R.layout.fragment_settings, container, false);
+        recyclerView = rootView.findViewById(R.id.recyclerViewActivity);
+        tvCaloriesBurnedActivities = rootView.findViewById(R.id.tvCaloriesBurnedActivities);
+        llEmptyActivities =  rootView.findViewById(R.id.ll_emptyActivities);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
+        recyclerView.setLayoutManager(layoutManager);
+        loadData();
+        setLayoutVisibility();
+        activityItemAdapter = new ActivityItemAdapter(activityDataList);
+        recyclerView.setAdapter(activityItemAdapter);
+        return rootView;
     }
 
     //TODO: display steps from last logout - get step count from service and store it in shared prefs
 
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
         Log.d(TAG, "onViewCreated");
 
-        recyclerView = view.findViewById(R.id.recyclerViewActivity);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
-        recyclerView.setLayoutManager(layoutManager);
 
-        activityDataList = new ArrayList<>();
-        activityItemAdapter = new ActivityItemAdapter(activityDataList);
-        recyclerView.setAdapter(activityItemAdapter);
     }
 
     @Override
     public void onResume() {
         super.onResume();
         Log.d(TAG, "onResume");
-        activityReceiver = new ActivityReceiver(activityItemAdapter);
+        activityReceiver = new ActivityReceiver(tvCaloriesBurnedActivities);
         IntentFilter filter = new IntentFilter();
         filter.addAction(ActivityService.ACTIVITY_ACTION);
         getActivity().registerReceiver(activityReceiver, filter);
@@ -122,6 +125,29 @@ public class SettingsFragment extends Fragment implements AuthenticationObserver
         super.onDestroyView();
         Log.d(TAG, "onDestroy");
         calAidApp.removeObserver(this);
+    }
+
+    void loadData() {
+        SharedPreferences sharedPreferences = this.getContext().getSharedPreferences("activityDetails", Context.MODE_PRIVATE);
+        Gson gson = new Gson();
+        String jsonActivities = sharedPreferences.getString("activity", null);
+        Type type = new TypeToken<List<ActivityData>>() {
+        }.getType();
+
+        activityDataList = gson.fromJson(jsonActivities, type);
+        //Log.d(TAG, activityDataList.toString());
+        if (activityDataList == null) {
+            activityDataList = new ArrayList<>();
+        }
+
+    }
+
+    void setLayoutVisibility() {
+        if (activityDataList.isEmpty()) {
+            llEmptyActivities.setVisibility(View.VISIBLE);
+        } else {
+            recyclerView.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override

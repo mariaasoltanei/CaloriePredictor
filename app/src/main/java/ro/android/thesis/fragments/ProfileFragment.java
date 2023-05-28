@@ -202,6 +202,7 @@ public class ProfileFragment extends Fragment implements AuthenticationObserver 
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.clear();
         editor.apply();
+        deleteActivitiesSharedPrefs();
         loadingDialog.setCancelable(false);
         loadingDialog.show(getChildFragmentManager(), "loading_screen");
 //        loadingDialog.dismiss();
@@ -252,6 +253,12 @@ public class ProfileFragment extends Fragment implements AuthenticationObserver 
                 }
             });
         }
+    }
+    public void deleteActivitiesSharedPrefs(){
+        SharedPreferences sharedPref = this.getContext().getSharedPreferences("activityDetails", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.clear();
+        editor.apply();
     }
     @Override
     public void update(SyncConfiguration syncConfiguration, io.realm.mongodb.User user) {

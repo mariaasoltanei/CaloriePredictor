@@ -66,6 +66,7 @@ import ro.android.thesis.broadcasts.NotificationReceiver;
 import ro.android.thesis.broadcasts.StepCountReceiver;
 import ro.android.thesis.domain.User;
 import ro.android.thesis.services.StepService;
+import ro.android.thesis.utils.FitnessCalculations;
 
 
 public class DashboardFragment extends Fragment {
@@ -111,16 +112,15 @@ public class DashboardFragment extends Fragment {
     TextView tvNumCalories;
     TextView tvCaloriesConsumed;
     TextView tvSpeed;
-    TextView tvDuration;
+    Button btnUpdateCalories;
     CircularProgressIndicator circularProgressIndicator;
     StepService.StepCountBinder binder;
 
     //TODO: add wait time
-    private String url = "http://192.168.0.105:5000/calories/" + CalAidApp.getApp().currentUser().getId();
+    private String url = "http://192.168.0.105:5000/calories/" ;//+ CalAidApp.getApp().currentUser().getId();
     private String postBodyString;
     private MediaType mediaType;
     private RequestBody requestBody;
-    private Button connect;
 
     public StepCountReceiver getStepCountReceiver() {
         return stepCountReceiver;
@@ -171,22 +171,7 @@ public class DashboardFragment extends Fragment {
         tvNumCalories = rootView.findViewById(R.id.tvNumCalories);
         tvCaloriesConsumed = rootView.findViewById(R.id.tvCaloriesConsumed);
         tvSpeed = rootView.findViewById(R.id.tvSpeed);
-        tvDuration = rootView.findViewById(R.id.tvDuration);
-        connect = rootView.findViewById(R.id.btnTestRequest);
-        connect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-//                getRequest(url);
-                if (!isThreadRunning) {
-                    startThread();
-                    connect.setText("End");
-                }
-                else {
-                    stopThread();
-                    connect.setText("Start");
-                }
-            }
-        });
+        btnUpdateCalories = rootView.findViewById(R.id.btnUpdateCalories);
         serviceConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
@@ -216,7 +201,7 @@ public class DashboardFragment extends Fragment {
         requestPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION);
         //sendNotification();
         loadSharePrefsData();
-        tvNumCalories.setText(String.valueOf(calculateCalories()));
+        tvNumCalories.setText(String.valueOf(FitnessCalculations.calculateBMR(getUserSharedPrefs())));
         return rootView;
     }
 
@@ -450,28 +435,14 @@ public class DashboardFragment extends Fragment {
         return user.getWeight();
     }
 
-    private int calculateCalories() {
+    private User getUserSharedPrefs() {
         SharedPreferences sharedPref = this.getContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
         String userLogged = sharedPref.getString("user", null);
         Gson gson = new Gson();
         Type type = new TypeToken<User>() {
         }.getType();
         User user = gson.fromJson(userLogged, type);
-        //TODO: find age difference with the full date
-        Calendar calendar = Calendar.getInstance();
-        int age = calendar.get(Calendar.YEAR) - Integer.parseInt(user.getBirthDate().substring(user.getBirthDate().length() - 4));
-        Log.d("SHARED PREFS TESTAGE", user.getBirthDate().substring(user.getBirthDate().length() - 4));
-        Log.d("SHARED PREFS TESTAGE", String.valueOf(age));
-        //TODO: move bmr to fitness calculations
-        double bmr = 0;
-        if(user.getGender() == "Female"){
-            bmr = 10 * user.getWeight() + 6.25 * user.getHeight() - 5 * age + 161;
-            Log.d("SHARED PREFS TESTAGE", String.valueOf(bmr));
-        }
-        else {
-            bmr = 10 * user.getWeight() + 6.25 * user.getHeight() - 5 * age + 5;
-        }
-        return (int) (bmr * user.getActivityMultiplier());
+        return user;
     }
     private void startThread() {
         if (!isThreadRunning) {
