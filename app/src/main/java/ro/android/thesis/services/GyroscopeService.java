@@ -61,11 +61,11 @@ public class GyroscopeService extends Service implements SensorEventListener {
                             @Override
                             public void run() {
                                 Log.d("CALAIDAPP -gyro service", "gyro");
-                                //sendDataToMongoDB();
-                                handler.postDelayed(this, 5000);
+                                sendDataToMongoDB();
+                                handler.postDelayed(this, 10000);
                             }
                         };
-                        handler.postDelayed(runnable, 5000);
+                        handler.postDelayed(runnable, 10000);
                     }
                 });
                 sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);

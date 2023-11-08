@@ -132,8 +132,10 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
                             getRealm.executeTransaction(new Realm.Transaction() {
                                 @Override
                                 public void execute(Realm realm) {
+                                    Log.d("CALAIDAPP", "AJUNGE LA EXECUTIE");
                                     RealmQuery<User> query = realm.where(User.class).equalTo("email", email).equalTo("password", password);
                                     currentUser = query.findFirst();
+                                    Log.d("CALAIDAPP", currentUser.toString());
                                     if(currentUser != null){
                                         currentUserSharedPrefs = new User(currentUser.getId(),
                                                 currentUser.getFirstName(),
@@ -145,6 +147,7 @@ public class LogInActivity extends AppCompatActivity implements AuthenticationOb
                                                 currentUser.getGender(),
                                                 currentUser.getActivityMultiplier());
                                         addUserToSharedPreferences(currentUserSharedPrefs);
+                                        Log.d("SharedPrefs", currentUser.toString());
                                         Intent mainIntent = new Intent(getApplicationContext(), MainActivity.class);
                                         startActivity(mainIntent);
 

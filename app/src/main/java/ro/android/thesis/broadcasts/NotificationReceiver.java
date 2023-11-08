@@ -18,10 +18,6 @@ import ro.android.thesis.R;
 public class NotificationReceiver extends BroadcastReceiver {
     final String CHANNELID = "MovementChannel";
 
-//    public NotificationReceiver(String notificationContent) {
-//        this.notificationContent = notificationContent;
-//    }
-
     @Override
     public void onReceive(Context context, Intent intent) {
         String notificationContent = intent.getStringExtra("content");
@@ -31,8 +27,7 @@ public class NotificationReceiver extends BroadcastReceiver {
             int importance = NotificationManager.IMPORTANCE_DEFAULT;
             NotificationChannel channel = new NotificationChannel(CHANNELID, name, importance);
             channel.setDescription(description);
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
+
             NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }

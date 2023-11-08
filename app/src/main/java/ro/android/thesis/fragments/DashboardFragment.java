@@ -51,7 +51,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.R;
-import ro.android.thesis.StepServiceViewModel;
+import ro.android.thesis.viewModels.StepServiceViewModel;
 import ro.android.thesis.broadcasts.StepCountReceiver;
 import ro.android.thesis.domain.User;
 import ro.android.thesis.services.StepService;
@@ -74,7 +74,6 @@ public class DashboardFragment extends Fragment {
     StepService.StepCountBinder binder;
     private double calories;
     private String activity;
-    private long startTime = 0;
     private int noStepsStart;
     private double updatedCalories = 0;
     private boolean isThreadRunning = false;
@@ -85,10 +84,7 @@ public class DashboardFragment extends Fragment {
     private final Handler progressBarbHandler = new Handler();
     private ActivityResultLauncher<String> requestPermissionLauncher;
     //TODO: add wait time
-    private final String url = "http://192.168.0.102:5000/activityMultiplier/" + CalAidApp.getApp().currentUser().getId();
-    private String postBodyString;
-    private MediaType mediaType;
-    private RequestBody requestBody;
+    private final String url = "http://94.245.91.135:5000/activityMultiplier/"+ CalAidApp.getApp().currentUser().getId();
 
     public DashboardFragment() {
 
@@ -193,9 +189,8 @@ public class DashboardFragment extends Fragment {
         Intent serviceIntent = new Intent(getActivity(), StepService.class);
         getActivity().bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
         requestPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION);
-        //sendNotification();
         loadSharePrefsData();
-        tvNumCalories.setText(String.valueOf(FitnessCalculations.calculateBMR(getUserSharedPrefs())));
+        tvNumCalories.setText(String.valueOf(FitnessCalculations.calculateTDEE(getUserSharedPrefs())));
         return rootView;
     }
 
@@ -214,27 +209,21 @@ public class DashboardFragment extends Fragment {
     public void onPause() {
         super.onPause();
         Log.d(TAG, "onPause");
-        requestHandler.removeCallbacks(requestRunnable);
         getActivity().unregisterReceiver(stepCountReceiver);
+        //todo: fix this
+        //requestHandler.removeCallbacks(requestRunnable);
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         Log.d(TAG, "onDestroyView");
-//        handler.removeCallbacks(runnable);
-//        timerHandler.removeCallbacks(runnable);
-        //getActivity().unregisterReceiver(stepCountReceiver);
-//        resetNumStepsHandler.removeCallbacks(resetNumStepsRunnable);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy");
-//        handler.removeCallbacks(runnable);
-//        timerHandler.removeCallbacks(runnable);
-
     }
 
     private void getTDEE() {
@@ -243,33 +232,25 @@ public class DashboardFragment extends Fragment {
         requestRunnable = new Runnable() {
             @Override
             public void run() {
-                postRequest(url);
+                Log.d("OkHTTTPpost", "post req running");
 
+                postRequest(url);
             }
         };
         new Thread(new Runnable() {
             @Override
             public void run() {
-                // Simulate some delay
                 try {
                     Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-
                 requestHandler.post(requestRunnable);
             }
         }).start();
-
-
     }
 
-    //    private RequestBody buildRequestBody(String msg) {
-//        postBodyString = msg;
-//        mediaType = MediaType.parse("application/json; charset=utf-8");
-//        requestBody = RequestBody.create(jsonObject.toString(), mediaType);
-//        return requestBody;
-//    }
+
     private RequestBody buildRequestBody(JSONObject jsonObject) {
         String jsonStr = jsonObject.toString();
         MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
@@ -282,7 +263,8 @@ public class DashboardFragment extends Fragment {
             JSONObject jsonObject = new JSONObject();
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSS");
             Date currentDate = new Date();
-            double currentBMR = Double.parseDouble(tvNumCalories.getText().toString());
+            double currentBMR = FitnessCalculations.calculateBMR(getUserSharedPrefs());
+            Log.d("OkHTTTP-req", String.valueOf(currentBMR));//Double.parseDouble(tvNumCalories.getText().toString());
             String currentDateString = dateFormat.format(currentDate);
             jsonObject.put("timestamp", "2023-05-28 03:41:30.733000");
             jsonObject.put("currentBMR", currentBMR);
@@ -312,10 +294,12 @@ public class DashboardFragment extends Fragment {
                     try {
                         JSONObject jsonObject = new JSONObject(response.body().string());
                         double caloriesRequest = jsonObject.getDouble("TDEE");
+                        Log.d("OkHTTTPpost", String.valueOf(caloriesRequest));
                         setUpdatedCalories(caloriesRequest);
                         getActivity().runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+
                                 tvNumCalories.setText(String.valueOf(caloriesRequest));
                             }
                         });
@@ -332,50 +316,6 @@ public class DashboardFragment extends Fragment {
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
-
-
-    }
-
-    private void getRequest(String URL) {
-        OkHttpClient okHttpClient = new OkHttpClient();
-        Request request = new Request
-                .Builder()
-                .get()
-                .url(URL)
-                .build();
-        okHttpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.e("OkHTTTP", e.getMessage());
-                        call.cancel();
-                    }
-                }).start();
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                try {
-                    //Log.d("OkHTTTP", response.body().string());
-                    JSONObject jsonObject = new JSONObject(response.body().string());
-//                    calories = jsonObject.getDouble("calories");
-//                    speed = jsonObject.getDouble("speed");
-//                    //duration = jsonObject.getDouble("activityDurationMins");
-//                    setCalories(calories);
-//                    setSpeed(speed);
-//
-//                    Log.d("OkHTTTP", String.valueOf(calories));
-//                    Log.d("OkHTTTP", String.valueOf(speed));
-                    //Log.d("OkHTTTP", String.valueOf(duration));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                } catch (JSONException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
     }
 
     public boolean stepSensorsAvailable() {
@@ -417,7 +357,6 @@ public class DashboardFragment extends Fragment {
         return noSteps * 0.01;
 
     }
-    //TODO: notification foreground service
 
     public void startProgressBarThread() {
         countSteps.addTextChangedListener(new TextWatcher() {
@@ -456,15 +395,6 @@ public class DashboardFragment extends Fragment {
 
     }
 
-    private double getUserWeight() {
-        SharedPreferences sharedPref = this.getContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
-        String userLogged = sharedPref.getString("user", null);
-        Gson gson = new Gson();
-        Type type = new TypeToken<User>() {
-        }.getType();
-        User user = gson.fromJson(userLogged, type);
-        return user.getWeight();
-    }
 
     private User getUserSharedPrefs() {
         SharedPreferences sharedPref = this.getContext().getSharedPreferences("userDetails", Context.MODE_PRIVATE);
@@ -474,51 +404,6 @@ public class DashboardFragment extends Fragment {
         }.getType();
         User user = gson.fromJson(userLogged, type);
         return user;
-    }
-
-//    private void startThread() {
-//        if (!isThreadRunning) {
-//            isThreadRunning = true;
-//            startTime = System.currentTimeMillis();
-////            handler = new Handler(Looper.getMainLooper());
-//            runnable = new Runnable() {
-//                @Override
-//                public void run() {
-//                    if (isThreadRunning) {
-//                        postRequest(url);
-//                        handler.postDelayed(this, 120004);
-//                        handler.post(new Runnable() {
-//                            @Override
-//                            public void run() {
-////                                long elapsedTime = System.currentTimeMillis() - startTime;
-////                                int seconds = (int) (elapsedTime / 1000) % 60;
-////                                int minutes = (int) ((elapsedTime / (1000*60)) % 60);
-////                                String timeString = String.format("%02d:%02d", minutes, seconds);
-////                                tvDuration.setText(String.valueOf(timeString));
-////                                totalNumberCalories += calories;
-////                                tvCaloriesConsumed.setText(String.format("%,.2f",totalNumberCalories));
-////                                tvSpeed.setText(String.format("%,.2f", speed));
-//                            }
-//                        });
-//                    }
-//                }
-//            };
-//            handler.postDelayed(runnable, 120004);
-//            //timerHandler.postDelayed(runnable, 1000);
-//        }
-//    }
-
-//    private void stopThread() {
-//        if (isThreadRunning) {
-//            // totalNumberCalories = 0;
-//            isThreadRunning = false;
-//            handler.removeCallbacks(runnable);
-//            timerHandler.removeCallbacks(runnable);
-//        }
-//    }
-
-    public void unregisterReceiver() {
-        getActivity().unregisterReceiver(stepCountReceiver);
     }
 
 }

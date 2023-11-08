@@ -23,5 +23,8 @@ public class FitnessCalculations {
             return  10 * user.getWeight() + 6.25 * user.getHeight() - 5 * age + 5;
         }
     }
+    public static double calculateTDEE(User user){
+        return calculateBMR(user) * user.getActivityMultiplier();
+    }
 
 }

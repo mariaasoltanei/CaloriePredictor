@@ -39,9 +39,7 @@ public class ErrorDialog extends DialogFragment {
             ad.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             ad.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
         }
-//        if(errorDescription.length() > 100){
-//            tvErrorDescription.setTextSize(12);
-//        }
+
         tvErrorDescription.setText(errorDescription);
         btnCancelDialog.setOnClickListener(new View.OnClickListener() {
             @Override

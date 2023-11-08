@@ -52,8 +52,8 @@ public class ActivityService extends Service {
     public static final String NO_CALORIES = "ro.android.thesis.services.NO_CALORIES";
     public static final String ACTIVITY_TYPE = "ro.android.thesis.services.ACTIVITY_TYPE";
     private CalAidApp calAidApp;
-    private String url = " http://192.168.0.102:5000/calories/"+ CalAidApp.getApp().currentUser().getId();
-    //private String urlTest = "http://94.245.91.135:5000/calories/"+ CalAidApp.getApp().currentUser().getId();
+    private String url = " http://192.168.0.108:5000/calories/"+ CalAidApp.getApp().currentUser().getId();
+    private String urlTest = "http://94.245.91.135:5000/calories/"+ CalAidApp.getApp().currentUser().getId();
     List<ActivityData> activityDataList;
     private double calories;
     private double totalCaloriesActivity = 0;
@@ -93,17 +93,15 @@ public class ActivityService extends Service {
                     @Override
                     public void run() {
                         Log.d(TAG, "activity");
-
-                        postRequest(url);
-
-                        requestHandler.postDelayed(requestRunnable, 300000);
+                        postRequest(urlTest);
+                        requestHandler.postDelayed(requestRunnable, 240000);
                     }
                 };
-                requestHandler.postDelayed(requestRunnable, 300000 );//300000 120000
+                requestHandler.postDelayed(requestRunnable, 240000 );//300000 120000
                 final String CHANNELID = "Foreground Service ID 5";
                 createNotificationChannel(CHANNELID);
                 Notification.Builder notification = new Notification.Builder(this, CHANNELID)
-                        .setContentText("Collecting ACTIVITIES")
+                        .setContentText("Collecting data from motion sensors ...")
                         .setContentTitle("")
                         .setSmallIcon(R.drawable.icon_launcher);
 
@@ -198,7 +196,8 @@ public class ActivityService extends Service {
     private void sendActivity(double noCaloriesActivity) {
         Intent intent = new Intent(ACTIVITY_ACTION);
         totalCaloriesActivity += noCaloriesActivity;
-        intent.putExtra(NO_CALORIES, totalCaloriesActivity);
+        NumberFormat formatter = new DecimalFormat("#0.00");
+        intent.putExtra(NO_CALORIES, Double.parseDouble(formatter.format(totalCaloriesActivity)));
         sendBroadcast(intent);
     }
     private double getUserWeight(){

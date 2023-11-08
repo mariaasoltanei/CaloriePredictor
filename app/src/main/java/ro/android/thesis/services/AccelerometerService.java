@@ -68,11 +68,11 @@ public class AccelerometerService extends Service implements SensorEventListener
                             @Override
                             public void run() {
                                 Log.d("CALAIDAPP -Acc service", "acc");
-                                //sendDataToMongoDB();
-                                handler.postDelayed(this, 5000);
+                                sendDataToMongoDB();
+                                handler.postDelayed(this, 10000);
                             }
                         };
-                        handler.postDelayed(runnable, 5000);
+                        handler.postDelayed(runnable, 10000);
                     }
                 });
                 sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -117,7 +117,6 @@ public class AccelerometerService extends Service implements SensorEventListener
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         Log.d(TAG,+ sensorEvent.values[0] + " " + sensorEvent.values[1] + " " + sensorEvent.values[2]);
-
         AccelerometerData data = new AccelerometerData();
         data.setId(new ObjectId());
         data.setUserId(userId);

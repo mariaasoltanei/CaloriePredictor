@@ -1,4 +1,4 @@
-package ro.android.thesis;
+package ro.android.thesis.viewModels;
 
 import android.content.ServiceConnection;
 

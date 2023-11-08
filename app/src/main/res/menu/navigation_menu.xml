@@ -10,6 +10,6 @@
         android:title="Profile"/>
     <item
         android:id="@+id/settingsFragment"
-        android:icon="@drawable/activity_icon"
+        android:icon="@drawable/icon_menu_activity"
         android:title="Activities"/>
 </menu>

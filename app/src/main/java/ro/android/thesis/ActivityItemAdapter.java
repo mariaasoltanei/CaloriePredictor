@@ -54,7 +54,7 @@ public class ActivityItemAdapter extends RecyclerView.Adapter<ActivityItemAdapte
             holder.imgActivityType.setImageResource(R.drawable.sitting_icon);
         }
         else {
-            holder.imgActivityType.setImageResource(R.drawable.laying_icon);
+            holder.imgActivityType.setImageResource(R.drawable.activity_icon);
         }
 
     }

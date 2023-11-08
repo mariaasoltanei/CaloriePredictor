@@ -26,16 +26,13 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 
 import io.realm.Realm;
-import io.realm.RealmResults;
 import io.realm.mongodb.sync.SyncConfiguration;
 import ro.android.thesis.AuthenticationObserver;
 import ro.android.thesis.CalAidApp;
 import ro.android.thesis.LogInActivity;
 import ro.android.thesis.R;
-import ro.android.thesis.StepServiceViewModel;
+import ro.android.thesis.viewModels.StepServiceViewModel;
 import ro.android.thesis.dialogs.LoadingDialog;
-import ro.android.thesis.domain.AccelerometerData;
-import ro.android.thesis.domain.StepCount;
 import ro.android.thesis.domain.User;
 import ro.android.thesis.services.AccelerometerService;
 import ro.android.thesis.services.ActivityService;

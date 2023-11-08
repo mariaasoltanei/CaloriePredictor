@@ -129,6 +129,7 @@ public class StepService extends Service implements SensorEventListener {
                     public void onSuccess(Realm realm) {
                         realmStepService = realm;
                         userId = calAidApp.getAppUser().getId();
+                        resetStepCount();
                         handler = new Handler();
                         runnable = new Runnable() {
                             @Override
@@ -137,7 +138,7 @@ public class StepService extends Service implements SensorEventListener {
                                 //sendStepsToMongoDB();
                                 sendSpeedAndCalories();
                                 fireNotification(getStepCount());
-                                resetStepCount();
+
                                 handler.postDelayed(this, 5000);
                             }
                         };
@@ -167,7 +168,7 @@ public class StepService extends Service implements SensorEventListener {
     public void onDestroy() {
         Log.d(TAG, "onDestroy: Service destroyed");
         super.onDestroy();
-        addStepsToSharedPreferences();
+        //addStepsToSharedPreferences();
 
         sensorManager.unregisterListener(this);
         handler.removeCallbacks(runnable);
@@ -190,26 +191,24 @@ public class StepService extends Service implements SensorEventListener {
     }
 
     public void resetStepCount() {
+        this.stepsToday = this.totalSteps;
+        //updateStepCount(stepsToday);
+        Log.d(TAG, "onSensorChanged: Step today: " + stepsToday);
         Calendar midnight = Calendar.getInstance();
         midnight.setTimeInMillis(System.currentTimeMillis());
-        midnight.set(Calendar.HOUR_OF_DAY, 14);
-        midnight.set(Calendar.MINUTE, 38);
+        midnight.set(Calendar.HOUR_OF_DAY, 2);
+        midnight.set(Calendar.MINUTE, 33);
         midnight.set(Calendar.SECOND, 0);
         midnight.set(Calendar.MILLISECOND, 0);
-        if(System.currentTimeMillis() == midnight.getTimeInMillis()){
-            this.stepsToday = this.totalSteps;
-            Log.d(TAG, "onSensorChanged: Step today: " + stepsToday);
-            AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-            Intent intent = new Intent(STEP_COUNT_ACTION);
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent, PendingIntent.FLAG_IMMUTABLE);
-            intent.putExtra(EXTRA_STEP_COUNT, stepsToday);
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC, System.currentTimeMillis(), pendingIntent);
-//            }
-            addStepsToSharedPreferences();
-            sendBroadcast(intent);
-        }
 
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        Intent intent = new Intent(STEP_COUNT_ACTION);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this.getApplicationContext(), 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        intent.putExtra(EXTRA_STEP_COUNT, stepsToday);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setRepeating(AlarmManager.RTC, midnight.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pendingIntent);
+        }
+       // addStepsToSharedPreferences();
         //sendBroadcast(intent);
     }
 
@@ -288,6 +287,64 @@ public class StepService extends Service implements SensorEventListener {
         }
         stepsTodayList.clear();
     }
+    private double[] calculateSpeed() {
+        double[] metrics = new double[2];
+        if(stepsTodayList.size() > 0) {
+            int noStepsInterval = stepsTodayList.size();
+            Instant startTime = stepsTodayList.get(0).getTimestamp().toInstant();
+            Instant endTime = stepsTodayList.get(stepsTodayList.size() - 1).getTimestamp().toInstant();
+            Duration duration = Duration.between(startTime, endTime);
+            double timeIntervalMins = duration.toMillis() / 60000.0;
+            double timeIntervalHours = timeIntervalMins / 60.0;
+            if (timeIntervalMins > SPEED_EPSILON) {
+                NumberFormat formatter = new DecimalFormat("#0.00");
+                double stepFrequency = noStepsInterval / timeIntervalMins;
+                metrics[0] = Double.parseDouble(formatter.format(stepFrequency * STRIDE_LENGTH));
+                double metsWalking = 0.0272 * metrics[0] + 1.2;
+                metrics[1] = Double.parseDouble(formatter.format(FitnessCalculations.calculateCalories(timeIntervalHours, metsWalking, getUserWeight())));
+            } else {
+                metrics[0] = 0.00;
+                metrics[1] = 0.00;
+            }
+            stepsTodayList.clear();
+            return metrics;
+        } else {
+            metrics[0] = 0.00;
+            metrics[1] = 0.00;
+            stepsTodayList.clear();
+            return metrics;
+        }
+    }
+
+    private double[] calculateSpeed(ArrayList<StepCount> noSteps) {
+        double[] metrics = new double[2];
+        if(noSteps.isEmpty()) {
+            metrics[0] = 0.00;
+            metrics[1] = 0.00;
+        } else {
+            int noStepsInterval = noSteps.size();
+            Instant startTime = noSteps.get(0).getTimestamp().toInstant();
+            Instant endTime = noSteps.get(noSteps.size() - 1).getTimestamp().toInstant();
+            Duration duration = Duration.between(startTime, endTime);
+            double timeIntervalMins = duration.toMillis() / 60000.0;
+            double timeIntervalHours = timeIntervalMins / 60.0;
+
+            if(timeIntervalMins > SPEED_EPSILON) {
+                NumberFormat formatter = new DecimalFormat("#0.00");
+                double stepFrequency = noStepsInterval / timeIntervalMins;
+                metrics[0] = Double.parseDouble(formatter.format(stepFrequency * STRIDE_LENGTH));
+                double metsWalking = 0.0272 * metrics[0] + 1.2;
+                metrics[1] = Double.parseDouble(formatter.format(FitnessCalculations.calculateCalories(timeIntervalHours, metsWalking, getUserWeight())));
+            } else {
+                metrics[0] = 0.00;
+                metrics[1] = 0.00;
+            }
+        }
+        noSteps.clear();
+        return metrics;
+    }
+
+
 
     private void sendStepsToMongoDB() {
         if (stepCountList.size() > 0) {

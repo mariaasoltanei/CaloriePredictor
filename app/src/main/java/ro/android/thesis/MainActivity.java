@@ -1,14 +1,11 @@
 package ro.android.thesis;
 
-import android.app.Service;
 import android.content.Context;
-import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.RequiresApi;
@@ -26,8 +23,7 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 
 import ro.android.thesis.domain.User;
-import ro.android.thesis.services.AccelerometerService;
-import ro.android.thesis.services.StepService;
+import ro.android.thesis.viewModels.StepServiceViewModel;
 
 
 public class MainActivity extends AppCompatActivity {

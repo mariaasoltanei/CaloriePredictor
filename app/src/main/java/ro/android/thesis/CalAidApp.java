@@ -114,16 +114,6 @@ public class CalAidApp extends Application {
         Log.d("CALAIDAPP - Application", String.valueOf(app.currentUser()));
         Log.d("CALAIDAPP - Application", String.valueOf(syncConfigurationMain));
 
-        if (app.currentUser() != null && syncConfigurationMain == null) {
-            /**DEBUGGING*/
-//            app.currentUser().logOutAsync(new App.Callback<User>() {
-//                @Override
-//                public void onResult(App.Result<User> result) {
-//                    Log.d("CALAIDAPP - Application", String.valueOf(app.currentUser()));
-//                }
-//            });
-
-        }
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
         Date date = new Date(System.currentTimeMillis());
